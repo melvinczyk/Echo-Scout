@@ -32,5 +32,6 @@ void drawAsciiArt(const char **lines, int numLines, int charW, int lineH,
 void drawScoutArt(uint16_t col);
 void startMenu();
 void tickMenu();
+void drawImuButton();
 
 #endif

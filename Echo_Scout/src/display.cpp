@@ -193,15 +193,24 @@ void clearAllFarZones() {
   }
 }
 
-
 void drawRadarBase() {
   tft.fillScreen(Config::C_BG);
+  drawHeader();
+
+  extern bool radarFound;
+  if (!radarFound) {
+    tft.setTextColor(Config::C_RED, Config::C_BG);
+    tft.drawCentreString("RADAR NOT FOUND", 120, 140, 2);
+    tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+    tft.drawCentreString("PLUG IN AND PRESS RESET", 120, 165, 1);
+    return;
+  }
+
   for (int i = 0; i < 3; i++)
     blips[i].active = false;
   clearAllFarZones();
   resetDashboard();
   buildGridTable();
-  drawHeader();
   drawDashboardFrame();
   updateDashboard(0, 0, 0, false);
   drawConeGrid();

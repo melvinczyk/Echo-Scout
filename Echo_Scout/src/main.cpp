@@ -11,15 +11,20 @@
 #include "menu.h"
 #include "settings_screen.h"
 #include "touch.h"
+#include "imu_screen.h"
 
 
 #define SCREEN_MENU 0
 #define SCREEN_RADAR 1
 #define SCREEN_SETTINGS 2
+#define SCREEN_IMU 3
 
 static uint8_t frameBuf[30];
 static size_t frameIdx = 0;
 static uint8_t frameState = 0;
+
+bool radarFound = true; // assume true, set false if init fails
+bool imuFound = false;  // set true only if imuInit() succeeds
 
 int currentScreen = SCREEN_MENU;
 
@@ -31,8 +36,6 @@ bool wasTouched = false;
 
 void setup() {
   Serial.begin(115200);
-  while (!Serial)
-    delay(10);
   pinMode(42, OUTPUT);
   digitalWrite(42, LOW);
   touchInit();
@@ -40,6 +43,7 @@ void setup() {
   tft.setRotation(0);
   tft.fillScreen(Config::C_BG);
   buildGridTable();
+  imuFound = imuInit();
   Serial1.begin(Config::RADAR_BAUD, SERIAL_8N1, Config::RADAR_RX,
                 Config::RADAR_TX);
   delay(500);
@@ -167,6 +171,9 @@ void loop() {
   if (currentScreen == SCREEN_MENU)
     tickMenu();
 
+  if (currentScreen == SCREEN_IMU)
+    imuUpdate();
+
   int tx, ty;
   bool touched = touchRead(tx, ty);
 
@@ -197,14 +204,17 @@ void loop() {
   } else {
     if (touched && !wasTouched) {
       if (currentScreen == SCREEN_MENU) {
-        if (inRect(tx, ty, 24, 262, 192, 44)) {
+        if (inRect(tx, ty, 24, 220, 192, 50)) {
           currentScreen = SCREEN_RADAR;
           radarResetState();
           drawRadarBase();
-        } else if (inRect(tx, ty, 36, 210, 168, 36)) {
+        } else if (inRect(tx, ty, 60, 178, 120, 28)) {
           currentScreen = SCREEN_SETTINGS;
           settingsScrollY = 0;
           drawSettingsScreen();
+        } else if (inRect(tx, ty, 72, 280, 96, 22)) {
+          currentScreen = SCREEN_IMU;
+          drawImuBase();
         }
       } else {
         if (inRect(tx, ty, 3, 3, 64, Config::HEADER_H - 6)) {
