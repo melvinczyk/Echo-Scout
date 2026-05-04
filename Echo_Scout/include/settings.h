@@ -29,10 +29,10 @@ extern const char *moveThreshLabels[];
 constexpr uint8_t NUM_HITS = 5;
 constexpr uint8_t NUM_DROPS = 5;
 constexpr uint8_t NUM_MR = 8;
-constexpr uint8_t NUM_MA = 7;
+constexpr uint8_t NUM_MA = 5;
 constexpr uint8_t NUM_AR = 8;
 constexpr uint8_t NUM_SG = 5;
-constexpr uint8_t NUM_MVTHR = 8;
+constexpr uint8_t NUM_MVTHR = 7;
 
 constexpr float SMOOTH_ALPHA = 0.4f;
 

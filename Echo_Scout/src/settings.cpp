@@ -23,7 +23,7 @@ const uint8_t moveThreshVals[] = {0, 10, 30, 50, 100, 150, 200};
 const char *moveThreshLabels[] = {"OFF", "10mm","30mm", "50mm",
                                   "100mm", "150mm", "200mm"};
 
-const Settings DEFAULT_SETTINGS = {2, 1, 3, 5, 3, 0, 0, true};
+const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true};
 Settings cfg = DEFAULT_SETTINGS;
 
 void buildGridTable();
