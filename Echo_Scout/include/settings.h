@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SETTINGS_H
+#define SETTINGS_H
+
 #include <Arduino.h>
 
 struct Settings {
@@ -20,11 +22,11 @@ extern const uint16_t accRangeVals[];
 extern const uint16_t speedGateVals[];
 extern const uint8_t moveThreshVals[];
 
-extern const char *minRangeLabels[];
-extern const char *maxAngleLabels[];
-extern const char *accRangeLabels[];
-extern const char *speedGateLabels[];
-extern const char *moveThreshLabels[];
+extern const char* minRangeLabels[];
+extern const char* maxAngleLabels[];
+extern const char* accRangeLabels[];
+extern const char* speedGateLabels[];
+extern const char* moveThreshLabels[];
 
 constexpr uint8_t NUM_HITS = 5;
 constexpr uint8_t NUM_DROPS = 5;
@@ -51,3 +53,5 @@ inline float cfgMoveThresh() {
 inline bool cfgSmoothing() { return cfg.smoothingOn; }
 
 void applySettings();
+
+#endif

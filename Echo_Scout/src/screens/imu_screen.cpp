@@ -1,26 +1,8 @@
-#include "imu_screen.h"
-#include "touch.h"
 #include <math.h>
+#include "imu_screen.h"
+#include "imu.h"
+#include "device_state.h"
 
-// ═══════════════════════════════════════════════════════════
-//  BNO085
-// ═══════════════════════════════════════════════════════════
-static Adafruit_BNO08x bno;
-static sh2_SensorValue_t sensorVal;
-static bool imuReady = false;
-
-static float qI = 0, qJ = 0, qK = 0, qR = 1.0f;
-
-// ═══════════════════════════════════════════════════════════
-//  FRAME CORRECTION — permutation 3
-// ═══════════════════════════════════════════════════════════
-static void applyFrameCorrection(float ri, float rj, float rk, float rr,
-                                 float &oi, float &oj, float &ok, float &or_) {
-  or_ = rr;
-  oi = rj;
-  oj = rk;
-  ok = ri;
-}
 
 // ═══════════════════════════════════════════════════════════
 //  CUBE GEOMETRY
@@ -47,9 +29,9 @@ static const uint8_t cubeEdges[12][2] = {
 //  Sensor: X=right, Y=down, Z=out back of display
 //  Screen: X=right, Y=up(inverted), depth=Z
 // ═══════════════════════════════════════════════════════════
-static void rotatePoint(float x, float y, float z, float &ox, float &oy,
-                        float &oz) {
-  float r = qR, i = qI, j = qJ, k = qK;
+static void rotatePoint(float x, float y, float z, float& ox, float& oy,
+                        float& oz) {
+  float r = ImuState::qR, i = ImuState::qI, j = ImuState::qJ, k = ImuState::qK;
   float tx = 2.0f * (j * z - k * y);
   float ty = 2.0f * (k * x - i * z);
   float tz = 2.0f * (i * y - j * x);
@@ -58,7 +40,7 @@ static void rotatePoint(float x, float y, float z, float &ox, float &oy,
   oz = z + r * tz + (i * ty - j * tx);
 }
 
-static void project(float x, float y, float z, int &sx, int &sy) {
+static void project(float x, float y, float z, int& sx, int& sy) {
   float scale = PROJ_DIST / (PROJ_DIST + z * CUBE_SIZE);
   sx = CUBE_CX + (int)(x * CUBE_SIZE * scale);
   sy = CUBE_CY + (int)(-y * CUBE_SIZE * scale); // invert Y so up is up
@@ -126,20 +108,6 @@ static void drawEuler(float roll, float pitch, float yaw) {
 }
 
 // ═══════════════════════════════════════════════════════════
-//  PUBLIC — INIT
-// ═══════════════════════════════════════════════════════════
-bool imuInit() {
-  if (!bno.begin_I2C(0x4A, &Wire)) {
-    imuReady = false;
-    Serial.println("BNO085 not found");
-    return false;
-  }
-  bno.enableReport(SH2_GAME_ROTATION_VECTOR, 20000);
-  imuReady = true;
-  return true;
-}
-
-// ═══════════════════════════════════════════════════════════
 //  PUBLIC — BASE SCREEN
 // ═══════════════════════════════════════════════════════════
 void drawImuBase() {
@@ -158,7 +126,7 @@ void drawImuBase() {
   tft.setTextColor(Config::C_GREEN, Config::C_BG);
   tft.drawCentreString("IMU", 120, 9, 2);
 
-  if (!imuReady) {
+  if (!ImuState::ready) {
     tft.setTextColor(Config::C_RED, Config::C_BG);
     tft.drawCentreString("BNO085 NOT FOUND", 120, 150, 2);
     tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
@@ -185,34 +153,15 @@ void drawImuBase() {
 // ═══════════════════════════════════════════════════════════
 //  PUBLIC — UPDATE
 // ═══════════════════════════════════════════════════════════
-void imuUpdate() {
-  if (!imuReady)
-    return;
-  if (!bno.getSensorEvent(&sensorVal))
-    return;
-  if (sensorVal.sensorId != SH2_GAME_ROTATION_VECTOR)
-    return;
-
-  float rawI = sensorVal.un.gameRotationVector.i;
-  float rawJ = sensorVal.un.gameRotationVector.j;
-  float rawK = sensorVal.un.gameRotationVector.k;
-  float rawR = sensorVal.un.gameRotationVector.real;
-
-  float ci, cj, ck, cr;
-  applyFrameCorrection(rawI, rawJ, rawK, rawR, ci, cj, ck, cr);
-
-  if (fabsf(ci - qI) < 0.005f && fabsf(cj - qJ) < 0.005f &&
-      fabsf(ck - qK) < 0.005f && fabsf(cr - qR) < 0.005f)
-    return;
-
-  qI = ci;
-  qJ = cj;
-  qK = ck;
-  qR = cr;
+void tickIMU() {
+  imuUpdate();
 
   eraseCube();
   drawCubeEdges(Config::C_GREEN);
   cubeDrawn = true;
+
+  // Local aliases for Euler math — rotatePoint() reads ImuState:: directly
+  float qI = ImuState::qI, qJ = ImuState::qJ, qK = ImuState::qK, qR = ImuState::qR;
 
   // Euler from corrected quaternion
   float sinr = 2.0f * (qR * qI + qJ * qK);

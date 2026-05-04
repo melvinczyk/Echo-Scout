@@ -1,6 +1,7 @@
 #include "settings.h"
 #include "grid.h"
 
+
 const uint8_t hitsVals[] = {1, 2, 3, 4, 5};
 const uint8_t dropsVals[] = {1, 2, 3, 4, 5};
 
@@ -25,7 +26,5 @@ const char *moveThreshLabels[] = {"OFF", "10mm","30mm", "50mm",
 
 const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true};
 Settings cfg = DEFAULT_SETTINGS;
-
-void buildGridTable();
 
 void applySettings() { buildGridTable(); }

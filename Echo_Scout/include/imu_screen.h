@@ -1,13 +1,10 @@
-#pragma once
-#include "config.h"
-#include "display.h"
-#include <Adafruit_BNO08x.h>
-#include <Arduino.h>
+#ifndef IMU_SCREEN_H
+#define IMU_SCREEN_H
 
-// ═══════════════════════════════════════════════════════════
-//  IMU SCREEN
-// ═══════════════════════════════════════════════════════════
-bool imuInit();
-void imuUpdate();
+#include <Adafruit_BNO08x.h>
+#include "radar_screen.h"
+
 void drawImuScreen();
 void drawImuBase();
+
+#endif

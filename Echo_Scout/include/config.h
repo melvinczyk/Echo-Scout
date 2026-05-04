@@ -1,6 +1,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
+
 #include <cstdint>
+
+// Screen IDs
+#define SCREEN_MENU     0
+#define SCREEN_RADAR    1
+#define SCREEN_SETTINGS 2
+#define SCREEN_IMU      3
 
 namespace Config {
     // Serial
@@ -40,5 +47,17 @@ namespace Config {
 
     // Radar
     constexpr float MAX_RANGE_MM = 5000.0f;
+
+    // Sensors
+    constexpr int IMU_ADDRESS = 0x4A;
 }
+
+
+#define CONE_TOP (Config::DASH_Y + Config::DASH_H + 1)
+#define CONE_LEN (Config::APEX_Y - CONE_TOP - 4)
+
+inline bool inRect(int tx, int ty, int rx, int ry, int rw, int rh) {
+    return tx >= rx && tx <= rx + rw && ty >= ry && ty <= ry + rh;
+}
+
 #endif

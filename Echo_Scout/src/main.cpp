@@ -1,37 +1,26 @@
-#include <HardwareSerial.h>
-#include <TFT_eSPI.h>
-#include <Wire.h>
 #include <math.h>
 
-#include "config.h"
-#include "settings.h"
-#include "grid.h"
+#include "app_state.h"
 #include "radar.h"
-#include "display.h"
-#include "menu.h"
+#include "menu_screen.h"
 #include "settings_screen.h"
-#include "touch.h"
 #include "imu_screen.h"
+#include "touch.h"
+#include "imu.h"
 
-
-#define SCREEN_MENU 0
-#define SCREEN_RADAR 1
-#define SCREEN_SETTINGS 2
-#define SCREEN_IMU 3
+// Definitions for symbols declared in app_state.h
+bool radarFound   = true;
+bool imuFound     = false;
+int  currentScreen = SCREEN_MENU;
 
 static uint8_t frameBuf[30];
-static size_t frameIdx = 0;
+static size_t  frameIdx   = 0;
 static uint8_t frameState = 0;
 
-bool radarFound = true; // assume true, set false if init fails
-bool imuFound = false;  // set true only if imuInit() succeeds
-
-int currentScreen = SCREEN_MENU;
-
-float radarDistance = 0, radarAngle = 0, radarSpeed = 0;
-float radarX = 0, radarY = 0;
-bool radarPresent = false;
-bool wasTouched = false;
+static float radarDistance = 0, radarAngle = 0, radarSpeed = 0;
+static float radarX = 0, radarY = 0;
+static bool  radarPresent = false;
+static bool  wasTouched   = false;
 
 
 void setup() {
@@ -52,7 +41,7 @@ void setup() {
 }
 
 
-void loop() {
+static void processSerial() {
   while (Serial1.available()) {
     uint8_t b = Serial1.read();
     switch (frameState) {
@@ -68,7 +57,7 @@ void loop() {
       break;
     case 3:
       if (b == 0x00) {
-        frameIdx = 0;
+        frameIdx  = 0;
         frameState = 4;
       } else
         frameState = 0;
@@ -90,64 +79,38 @@ void loop() {
 
             for (int i = 0; i < 3; i++) {
               if (t[i].present) {
-                float dist =
-                    sqrtf((float)t[i].x * t[i].x + (float)t[i].y * t[i].y);
-                float angle =
-                    atan2f((float)t[i].x, (float)t[i].y) * 180.0f / PI;
+                float dist  = sqrtf((float)t[i].x * t[i].x +
+                                    (float)t[i].y * t[i].y);
+                float angle = atan2f((float)t[i].x, (float)t[i].y) *
+                              180.0f / PI;
 
                 if (dist <= cfgAccRange()) {
-                  float dx = t[i].x - lastBlipX[i];
-                  float dy = t[i].y - lastBlipY[i];
-                  float frameMovement = sqrtf(dx * dx + dy * dy);
-                  bool validMovement =
-                      (frameMovement < 180.0f || !blips[i].active);
-
-                  if (validMovement) {
-                    if (cfgSmoothing() && blips[i].active) {
-                      smoothedX[i] = SMOOTH_ALPHA * t[i].x +
-                                     (1.0f - SMOOTH_ALPHA) * smoothedX[i];
-                      smoothedY[i] = SMOOTH_ALPHA * t[i].y +
-                                     (1.0f - SMOOTH_ALPHA) * smoothedY[i];
-                    } else {
-                      smoothedX[i] = t[i].x;
-                      smoothedY[i] = t[i].y;
-                    }
-
-                    float mdx = smoothedX[i] - lastBlipX[i];
-                    float mdy = smoothedY[i] - lastBlipY[i];
-                    float moved = sqrtf(mdx * mdx + mdy * mdy);
-
-                    if (moved > cfgMoveThresh() || !blips[i].active) {
-                      lastBlipX[i] = smoothedX[i];
-                      lastBlipY[i] = smoothedY[i];
-                      int sx, sy;
-                      radarToScreen(smoothedX[i], smoothedY[i], sx, sy);
-                      if (sy >= CONE_TOP && sy < Config::SCREEN_H)
-                        updateBlip(i, sx, sy, true);
-                    }
+                  float outX, outY;
+                  if (smoothTarget(i, blips[i].active, t[i].x, t[i].y,
+                                   outX, outY)) {
+                    int sx, sy;
+                    radarToScreen(outX, outY, sx, sy);
+                    if (sy >= CONE_TOP && sy < Config::SCREEN_H)
+                      updateBlip(i, sx, sy, true);
                   }
                 } else {
                   updateBlip(i, 0, 0, false);
-                  lastBlipX[i] = 0;
-                  lastBlipY[i] = 0;
+                  clearTargetSmoothing(i);
                   newFarZone[getZone(angle)] = true;
                 }
 
                 if (dist < bestDist) {
-                  bestDist = dist;
+                  bestDist      = dist;
                   radarDistance = dist;
-                  radarX = t[i].x;
-                  radarY = t[i].y;
-                  radarAngle = angle;
-                  radarSpeed = t[i].speed;
-                  radarPresent = true;
+                  radarX        = t[i].x;
+                  radarY        = t[i].y;
+                  radarAngle    = angle;
+                  radarSpeed    = t[i].speed;
+                  radarPresent  = true;
                 }
               } else {
                 updateBlip(i, 0, 0, false);
-                lastBlipX[i] = 0;
-                lastBlipY[i] = 0;
-                smoothedX[i] = 0;
-                smoothedY[i] = 0;
+                clearTargetSmoothing(i);
               }
             }
 
@@ -162,35 +125,37 @@ void loop() {
           }
         }
         frameState = 0;
-        frameIdx = 0;
+        frameIdx   = 0;
       }
       break;
     }
   }
+}
 
+static void tickScreens() {
   if (currentScreen == SCREEN_MENU)
     tickMenu();
-
   if (currentScreen == SCREEN_IMU)
     imuUpdate();
+}
 
+static void handleTouch() {
   int tx, ty;
   bool touched = touchRead(tx, ty);
 
   if (currentScreen == SCREEN_SETTINGS) {
     if (touched && !wasTouched) {
-      touchStartY = ty;
+      touchStartY     = ty;
       touchStartScroll = settingsScrollY;
-      touchMoved = false;
+      touchMoved      = false;
     } else if (touched && wasTouched) {
       int drag = touchStartY - ty;
       if (abs(drag) > 8) {
         touchMoved = true;
-        int maxScroll =
-            max(0, settingsTotalH() -
-                       (Config::SCREEN_H - Config::HEADER_H - SET_RESET_H));
+        int maxScroll = max(0, settingsTotalH() -
+                               (Config::SCREEN_H - Config::HEADER_H - SET_RESET_H));
         settingsScrollY = constrain(touchStartScroll + drag, 0, maxScroll);
-        int visTop = Config::HEADER_H;
+        int visTop    = Config::HEADER_H;
         int visBottom = Config::SCREEN_H - SET_RESET_H;
         tft.fillRect(0, visTop, Config::SCREEN_W, visBottom - visTop,
                      Config::C_BG);
@@ -225,4 +190,10 @@ void loop() {
     }
   }
   wasTouched = touched;
+}
+
+void loop() {
+  processSerial();
+  tickScreens();
+  handleTouch();
 }

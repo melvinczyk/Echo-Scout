@@ -1,10 +1,8 @@
 #ifndef SETTINGS_SCREEN_H
 #define SETTINGS_SCREEN_H
-#include "config.h"
-#include "display.h"
+
+#include "radar_screen.h"
 #include "settings.h"
-#include "touch.h"
-#include <Arduino.h>
 
 
 constexpr int SET_ROW_H = 46;

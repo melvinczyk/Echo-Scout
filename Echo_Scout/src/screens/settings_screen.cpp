@@ -1,5 +1,6 @@
 #include "settings_screen.h"
-#include "menu.h"
+#include "menu_screen.h"
+#include "app_state.h"
 
 
 int settingsScrollY = 0;
@@ -139,8 +140,7 @@ void drawSettingsScreen() {
 void handleSettingsTouch(int tx, int ty) {
   if (inRect(tx, ty, 3, 3, 58, Config::HEADER_H - 6)) {
     applySettings();
-    extern int currentScreen;
-    currentScreen = 0; // SCREEN_MENU
+    currentScreen = SCREEN_MENU;
     startMenu();
     return;
   }

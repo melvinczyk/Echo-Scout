@@ -1,5 +1,6 @@
-#include "display.h"
 #include <math.h>
+#include "radar_screen.h"
+#include "app_state.h"
 
 
 TFT_eSPI tft = TFT_eSPI();
@@ -197,7 +198,6 @@ void drawRadarBase() {
   tft.fillScreen(Config::C_BG);
   drawHeader();
 
-  extern bool radarFound;
   if (!radarFound) {
     tft.setTextColor(Config::C_RED, Config::C_BG);
     tft.drawCentreString("RADAR NOT FOUND", 120, 140, 2);

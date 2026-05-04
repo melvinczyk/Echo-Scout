@@ -1,9 +1,10 @@
-#ifndef DISPLAY_H
-#define DISPLAY_H
+#ifndef RADAR_SCREEN_H
+#define RADAR_SCREEN_H
+
+#include <TFT_eSPI.h>
 #include "config.h"
 #include "grid.h"
 #include "settings.h"
-#include <TFT_eSPI.h>
 
 extern TFT_eSPI tft;
 extern TFT_eSprite spr;

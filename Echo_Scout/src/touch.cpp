@@ -10,7 +10,7 @@ void touchInit() {
   Wire.begin(Config::TOUCH_SDA, Config::TOUCH_SCL);
 }
 
-bool touchRead(int &tx, int &ty) {
+bool touchRead(int& tx, int& ty) {
   Wire.beginTransmission(Config::TOUCH_ADDR);
   Wire.write(0x02);
   Wire.endTransmission(false);
@@ -28,6 +28,3 @@ bool touchRead(int &tx, int &ty) {
   return true;
 }
 
-bool inRect(int tx, int ty, int rx, int ry, int rw, int rh) {
-  return tx >= rx && tx <= rx + rw && ty >= ry && ty <= ry + rh;
-}

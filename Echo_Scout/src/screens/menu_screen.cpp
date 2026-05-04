@@ -1,23 +1,23 @@
-#include "menu.h"
-#include "display.h"
+#include "menu_screen.h"
 
-int menuAnimPhase = MENU_ANIM_CORNERS;
-int cornerStep = 0;
-bool launchBlink = false;
-unsigned long menuTimer = 0;
-float scoutGlow = 0.0f;
-bool scoutGlowUp = true;
-unsigned long scoutGlowTimer = 0;
-
-BracketSeg bracketSegs[NUM_BRACKET_SEGS] = {
-    {6, 6, 18, 1, Config::C_GREEN_DIM},
-    {6, 6, 18, 0, Config::C_GREEN_DIM},
-    {216, 6, 18, 1, Config::C_GREEN_DIM},
-    {233, 6, 18, 0, Config::C_GREEN_DIM},
-    {6, 313, 18, 1, Config::C_GREEN_DIM},
-    {6, 295, 18, 0, Config::C_GREEN_DIM},
-    {216, 313, 18, 1, Config::C_GREEN_DIM},
-    {233, 295, 18, 0, Config::C_GREEN_DIM},
+MenuState menuState = {
+    MenuAnimPhase::Corners,
+    0,
+    false,
+    0UL,
+    0.0f,
+    true,
+    0UL,
+    {
+        {6,   6,   18, true,  Config::C_GREEN_DIM},
+        {6,   6,   18, false, Config::C_GREEN_DIM},
+        {216, 6,   18, true,  Config::C_GREEN_DIM},
+        {233, 6,   18, false, Config::C_GREEN_DIM},
+        {6,   313, 18, true,  Config::C_GREEN_DIM},
+        {6,   295, 18, false, Config::C_GREEN_DIM},
+        {216, 313, 18, true,  Config::C_GREEN_DIM},
+        {233, 295, 18, false, Config::C_GREEN_DIM},
+    }
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -61,7 +61,7 @@ void drawImuMenuButton() {
 // ═══════════════════════════════════════════════════════════
 //  ASCII ART
 // ═══════════════════════════════════════════════════════════
-void drawAsciiArt(const char **lines, int numLines, int charW, int lineH,
+void drawAsciiArt(const char** lines, int numLines, int charW, int lineH,
                   int startX, int startY, uint16_t col) {
   for (int row = 0; row < numLines; row++) {
     const char *line = lines[row];
@@ -91,13 +91,13 @@ void drawScoutArt(uint16_t col) {
 //  START MENU
 // ═══════════════════════════════════════════════════════════
 void startMenu() {
-  launchBlink = false;
-  scoutGlow = 0.0f;
-  scoutGlowUp = true;
-  menuAnimPhase = MENU_ANIM_CORNERS;
-  cornerStep = 0;
-  menuTimer = millis();
-  scoutGlowTimer = millis();
+  menuState.launchBlink   = false;
+  menuState.scoutGlow     = 0.0f;
+  menuState.scoutGlowUp   = true;
+  menuState.animPhase     = MenuAnimPhase::Corners;
+  menuState.cornerStep    = 0;
+  menuState.timer         = millis();
+  menuState.scoutGlowTimer = millis();
 
   tft.fillScreen(Config::C_BG);
 
@@ -152,48 +152,48 @@ void startMenu() {
 // ═══════════════════════════════════════════════════════════
 void tickMenu() {
   unsigned long now = millis();
-  switch (menuAnimPhase) {
-  case MENU_ANIM_CORNERS:
-    if (now - menuTimer >= 55) {
-      menuTimer = now;
-      if (cornerStep < NUM_BRACKET_SEGS) {
-        BracketSeg &seg = bracketSegs[cornerStep];
+  switch (menuState.animPhase) {
+  case MenuAnimPhase::Corners:
+    if (now - menuState.timer >= 55) {
+      menuState.timer = now;
+      if (menuState.cornerStep < NUM_BRACKET_SEGS) {
+        BracketSeg &seg = menuState.bracketSegs[menuState.cornerStep];
         if (seg.isH)
           tft.drawFastHLine(seg.x, seg.y, seg.len, seg.col);
         else
           tft.drawFastVLine(seg.x, seg.y, seg.len, seg.col);
-        cornerStep++;
+        menuState.cornerStep++;
       } else {
-        menuAnimPhase = MENU_ANIM_HOLD;
-        menuTimer = now;
+        menuState.animPhase = MenuAnimPhase::Hold;
+        menuState.timer     = now;
       }
     }
     break;
-  case MENU_ANIM_HOLD:
-    if (now - menuTimer >= 550) {
-      menuTimer = now;
-      launchBlink = !launchBlink;
-      drawLaunchButton(launchBlink);
+  case MenuAnimPhase::Hold:
+    if (now - menuState.timer >= 550) {
+      menuState.timer       = now;
+      menuState.launchBlink = !menuState.launchBlink;
+      drawLaunchButton(menuState.launchBlink);
     }
     break;
   }
 
-  if (now - scoutGlowTimer >= 30) {
-    scoutGlowTimer = now;
-    if (scoutGlowUp) {
-      scoutGlow += 0.03f;
-      if (scoutGlow >= 1.0f) {
-        scoutGlow = 1.0f;
-        scoutGlowUp = false;
+  if (now - menuState.scoutGlowTimer >= 30) {
+    menuState.scoutGlowTimer = now;
+    if (menuState.scoutGlowUp) {
+      menuState.scoutGlow += 0.03f;
+      if (menuState.scoutGlow >= 1.0f) {
+        menuState.scoutGlow   = 1.0f;
+        menuState.scoutGlowUp = false;
       }
     } else {
-      scoutGlow -= 0.03f;
-      if (scoutGlow <= 0.0f) {
-        scoutGlow = 0.0f;
-        scoutGlowUp = true;
+      menuState.scoutGlow -= 0.03f;
+      if (menuState.scoutGlow <= 0.0f) {
+        menuState.scoutGlow   = 0.0f;
+        menuState.scoutGlowUp = true;
       }
     }
-    uint8_t g = (uint8_t)(12 + scoutGlow * 51.0f);
+    uint8_t g = (uint8_t)(12 + menuState.scoutGlow * 51.0f);
     drawScoutArt((uint16_t)(g << 5));
   }
 }

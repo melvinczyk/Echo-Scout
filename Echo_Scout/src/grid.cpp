@@ -1,9 +1,5 @@
 #include "grid.h"
-#include "display.h"
-
-
-void drawHeader();
-void drawDashboardFrame();
+#include "radar_screen.h"
 
 GridPx gridPx[MAX_RING_PX];
 int gridPxCount = 0;
@@ -16,7 +12,7 @@ float scaleDist(float distMM) {
   return powf(ratio, power) * 0.88f;
 }
 
-void radarToScreen(float xMM, float yMM, int &sx, int &sy) {
+void radarToScreen(float xMM, float yMM, int& sx, int& sy) {
   float dist = sqrtf(xMM * xMM + yMM * yMM);
   if (dist < 1.0f) {
     sx = Config::APEX_X;
@@ -29,7 +25,7 @@ void radarToScreen(float xMM, float yMM, int &sx, int &sy) {
   sy = Config::APEX_Y - (int)(px * (yMM / dist));
 }
 
-void radarToScreenAngle(float distMM, float azDeg, int &sx, int &sy) {
+void radarToScreenAngle(float distMM, float azDeg, int& sx, int& sy) {
   float norm = scaleDist(distMM);
   float px = norm * CONE_LEN;
   float rad = azDeg * PI / 180.0f;
@@ -243,7 +239,4 @@ void drawConeGrid() {
     tft.setTextColor(Config::C_GREEN_FAINT, Config::C_BG);
     tft.drawString(lbl, lx + 2, ly - 8, 1);
   }
-
-  drawHeader();
-  drawDashboardFrame();
 }
