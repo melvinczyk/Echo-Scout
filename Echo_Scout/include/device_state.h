@@ -5,6 +5,7 @@
 
 namespace RadarState {
     inline bool ready = false;
+    inline bool found = false;
     inline bool present = false;
     inline int16_t x = 0;
     inline int16_t y = 0;
@@ -14,6 +15,7 @@ namespace RadarState {
 
 namespace ImuState {
     inline bool ready = false;
+    inline bool found = false;
     inline float qI = 0.0f;
     inline float qJ = 0.0f;
     inline float qK = 0.0f;

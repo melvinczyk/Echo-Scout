@@ -9,11 +9,17 @@ static sh2_SensorValue_t sensorVal;
 
 bool imuInit() {
     if (!bno.begin_I2C(Config::IMU_ADDRESS, &Wire)) {
+        ImuState::found = false;
         ImuState::ready = false;
         Serial.println("BNO085 not found");
         return false;
     }
-    bno.enableReport(SH2_GAME_ROTATION_VECTOR, 20000);
+    ImuState::found = true;
+    if (!bno.enableReport(SH2_GAME_ROTATION_VECTOR, 20000)) {
+        ImuState::ready = false;
+        Serial.println("BNO085 report enable failed");
+        return false;
+    }
     ImuState::ready = true;
     return true;
 }

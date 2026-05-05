@@ -3,6 +3,14 @@
 
 #include "radar_screen.h"
 
+namespace MenuScreen {
+    constexpr int LAUNCH_X = 12,  LAUNCH_Y = 165, LAUNCH_W = 216, LAUNCH_H = 48;
+    constexpr int SETTINGS_X =  8,  SETTINGS_Y = 219, SETTINGS_W = 72, SETTINGS_BH = 28;
+    constexpr int IMU_X = 84,  IMU_Y = 219, IMU_W = 72, IMU_BH = 28;
+    constexpr int BATTERY_X = 160, BATTERY_Y = 219, BATTERY_W = 72, BATTERY_H = 28;
+    constexpr int POWER_X = 40,  POWER_Y = 295, POWER_W = 160, POWER_H = 18;
+}
+
 constexpr uint8_t NUM_BRACKET_SEGS = 8;
 
 enum class MenuAnimPhase : uint8_t { Corners, Hold };
@@ -15,25 +23,17 @@ struct BracketSeg {
 
 struct MenuState {
   MenuAnimPhase animPhase;
-  int           cornerStep;
-  bool          launchBlink;
+  int cornerStep;
+  bool launchBlink;
   unsigned long timer;
-  float         scoutGlow;
-  bool          scoutGlowUp;
+  float scoutGlow;
+  bool scoutGlowUp;
   unsigned long scoutGlowTimer;
-  BracketSeg    bracketSegs[NUM_BRACKET_SEGS];
+  BracketSeg bracketSegs[NUM_BRACKET_SEGS];
 };
 
-extern MenuState menuState;
-
 void drawLaunchButton(bool highlight);
-void drawSettingsMenuButton();
-void drawImuMenuButton();
-void drawBatteryMenuButton();
 void drawPowerButton();
-void drawAsciiArt(const char** lines, int numLines, int charW, int lineH,
-                  int startX, int startY, uint16_t col);
-void drawScoutArt(uint16_t col);
 void startMenu();
 void tickMenu();
 

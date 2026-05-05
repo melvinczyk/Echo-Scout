@@ -9,6 +9,7 @@ struct RawTarget {
   bool present;
 };
 
+void radarInit();
 RawTarget parseTarget(const uint8_t *b);
 void applyPersistence(RawTarget targets[3]);
 bool smoothTarget(int slot, bool wasTracked, float rawX, float rawY,
@@ -16,5 +17,6 @@ bool smoothTarget(int slot, bool wasTracked, float rawX, float rawY,
 void clearTargetSmoothing(int slot);
 
 void radarResetState();
+void radarProcessSerial();
 
 #endif

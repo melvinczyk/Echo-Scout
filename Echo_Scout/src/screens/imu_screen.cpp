@@ -4,11 +4,6 @@
 #include "device_state.h"
 
 
-#define CUBE_SIZE 55
-#define CUBE_CX 120
-#define CUBE_CY 148
-#define CUBE_YMAX 235
-#define PROJ_DIST 280.0f
 
 static const float cubeVerts[8][3] = {
     {-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1},
@@ -34,11 +29,11 @@ static void rotatePoint(float x, float y, float z, float& ox, float& oy,
 }
 
 static void project(float x, float y, float z, int& sx, int& sy) {
-  float scale = PROJ_DIST / (PROJ_DIST + z * CUBE_SIZE);
-  sx = CUBE_CX + (int)(x * CUBE_SIZE * scale);
-  sy = CUBE_CY + (int)(-y * CUBE_SIZE * scale);
-  sx = constrain(sx, 2, Config::SCREEN_W - 2);
-  sy = constrain(sy, Config::HEADER_H + 2, CUBE_YMAX);
+  float scale = ImuScreen::PROJ_DIST / (ImuScreen::PROJ_DIST + z * ImuScreen::CUBE_SIZE);
+  sx = ImuScreen::CUBE_CX + (int)(x * ImuScreen::CUBE_SIZE * scale);
+  sy = ImuScreen::CUBE_CY + (int)(-y * ImuScreen::CUBE_SIZE * scale);
+  sx = constrain(sx, 2, Display::SCREEN_W - 2);
+  sy = constrain(sy, Display::HEADER_H + 2, ImuScreen::CUBE_YMAX);
 }
 
 
@@ -47,17 +42,17 @@ static bool cubeDrawn = false;
 
 
 #define X_COL_FAR   0xA000
-#define X_COL_NEAR  Config::C_RED
+#define X_COL_NEAR  Display::Colors::RED
 
 static void drawThickLine(int x0, int y0, int x1, int y1, uint16_t col) {
-  tft.drawLine(x0, y0, x1, y1, col);
+  Display::tft.drawLine(x0, y0, x1, y1, col);
   int dx = x1 - x0, dy = y1 - y0;
   if (abs(dx) >= abs(dy)) {
-    tft.drawLine(x0, y0-1, x1, y1-1, col);
-    tft.drawLine(x0, y0+1, x1, y1+1, col);
+    Display::tft.drawLine(x0, y0-1, x1, y1-1, col);
+    Display::tft.drawLine(x0, y0+1, x1, y1+1, col);
   } else {
-    tft.drawLine(x0-1, y0, x1-1, y1, col);
-    tft.drawLine(x0+1, y0, x1+1, y1, col);
+    Display::tft.drawLine(x0-1, y0, x1-1, y1, col);
+    Display::tft.drawLine(x0+1, y0, x1+1, y1, col);
   }
 }
 
@@ -75,7 +70,7 @@ static void drawCubeEdges(uint16_t col) {
 
   for (int e = 0; e < 12; e++) {
     uint8_t a = cubeEdges[e][0], b = cubeEdges[e][1];
-    tft.drawLine(sx[a], sy[a], sx[b], sy[b], col);
+    Display::tft.drawLine(sx[a], sy[a], sx[b], sy[b], col);
   }
 
   
@@ -89,8 +84,8 @@ static void drawCubeEdges(uint16_t col) {
 static void eraseCube() {
   if (!cubeDrawn)
     return;
-  tft.fillRect(2, Config::HEADER_H + 2, Config::SCREEN_W - 4,
-               CUBE_YMAX - Config::HEADER_H - 2, Config::C_BG);
+  Display::tft.fillRect(2, Display::HEADER_H + 2, Display::SCREEN_W - 4,
+               ImuScreen::CUBE_YMAX - Display::HEADER_H - 2, Display::Colors::BG);
 }
 
 
@@ -106,69 +101,69 @@ static void drawEuler(float roll, float pitch, float yaw) {
   prevYaw = yaw;
 
   int cardW = 76, pad = 4, valY = 272;
-  tft.fillRect(pad + 1, valY - 1, 3 * cardW + 2 * pad - 2, 22, Config::C_BG);
+  Display::tft.fillRect(pad + 1, valY - 1, 3 * cardW + 2 * pad - 2, 22, Display::Colors::BG);
 
   char buf[12];
   sprintf(buf, "%+.0f", roll);
-  tft.setTextColor(Config::C_GREEN, Config::C_BG);
-  tft.drawCentreString(buf, pad + cardW / 2, valY, 2);
+  Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+  Display::tft.drawCentreString(buf, pad + cardW / 2, valY, 2);
 
   sprintf(buf, "%+.0f", pitch);
-  tft.setTextColor(Config::C_AMBER, Config::C_BG);
-  tft.drawCentreString(buf, pad + (cardW + pad) + cardW / 2, valY, 2);
+  Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
+  Display::tft.drawCentreString(buf, pad + (cardW + pad) + cardW / 2, valY, 2);
 
   sprintf(buf, "%+.0f", yaw);
-  tft.setTextColor(Config::C_GREEN, Config::C_BG);
-  tft.drawCentreString(buf, pad + 2 * (cardW + pad) + cardW / 2, valY, 2);
+  Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+  Display::tft.drawCentreString(buf, pad + 2 * (cardW + pad) + cardW / 2, valY, 2);
 }
 
 
 void drawImuBase() {
-  tft.fillScreen(Config::C_BG);
+  Display::tft.fillScreen(Display::Colors::BG);
   cubeDrawn = false;
   prevRoll = -9999;
   prevPitch = -9999;
   prevYaw = -9999;
 
   // Header
-  tft.fillRect(0, 0, Config::SCREEN_W, Config::HEADER_H, Config::C_BG);
-  tft.drawFastHLine(0, Config::HEADER_H - 1, Config::SCREEN_W, Config::C_SEP);
-  tft.drawRoundRect(3, 3, 64, Config::HEADER_H - 6, 3, Config::C_GREEN_DIM);
-  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-  tft.drawCentreString("< MENU", 35, 7, 2);
-  tft.setTextColor(Config::C_GREEN, Config::C_BG);
-  tft.drawCentreString("IMU", 120, 9, 2);
+  Display::tft.fillRect(0, 0, Display::SCREEN_W, Display::HEADER_H, Display::Colors::BG);
+  Display::tft.drawFastHLine(0, Display::HEADER_H - 1, Display::SCREEN_W, Display::Colors::SEP);
+  Display::tft.drawRoundRect(3, 3, 64, Display::HEADER_H - 6, 3, Display::Colors::GREEN_DIM);
+  Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+  Display::tft.drawCentreString("< MENU", 35, 7, 2);
+  Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+  Display::tft.drawCentreString("IMU", 120, 9, 2);
 
   if (!ImuState::ready) {
-    tft.setTextColor(Config::C_RED, Config::C_BG);
-    tft.drawCentreString("BNO085 NOT FOUND", 120, 150, 2);
-    tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-    tft.drawCentreString("CHECK WIRING AND RESET", 120, 175, 1);
+    Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
+    Display::tft.drawCentreString("BNO085 NOT FOUND", 120, 150, 2);
+    Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+    Display::tft.drawCentreString("CHECK WIRING AND RESET", 120, 175, 1);
     return;
   }
 
   // Readout cards
-  tft.drawFastHLine(0, 240, Config::SCREEN_W, Config::C_SEP);
+  Display::tft.drawFastHLine(0, 240, Display::SCREEN_W, Display::Colors::SEP);
   int cardW = 76, pad = 4;
   for (int i = 0; i < 3; i++) {
     int cx = pad + i * (cardW + pad);
-    tft.drawRect(cx, 240, cardW, 52, Config::C_GREEN_DIM);
+    Display::tft.drawRect(cx, 240, cardW, 52, Display::Colors::GREEN_DIM);
   }
-  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-  tft.drawCentreString("ROLL", pad + cardW / 2, 244, 1);
-  tft.drawCentreString("PITCH", pad + (cardW + pad) + cardW / 2, 244, 1);
-  tft.drawCentreString("YAW", pad + 2 * (cardW + pad) + cardW / 2, 244, 1);
+  Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+  Display::tft.drawCentreString("ROLL", pad + cardW / 2, 244, 1);
+  Display::tft.drawCentreString("PITCH", pad + (cardW + pad) + cardW / 2, 244, 1);
+  Display::tft.drawCentreString("YAW", pad + 2 * (cardW + pad) + cardW / 2, 244, 1);
 
-  drawCubeEdges(Config::C_GREEN);
+  drawCubeEdges(Display::Colors::GREEN);
   cubeDrawn = true;
 }
 
 
 void tickIMU() {
-  imuUpdate();
+  if (!imuUpdate()) return;
 
   eraseCube();
-  drawCubeEdges(Config::C_GREEN);
+  drawCubeEdges(Display::Colors::GREEN);
   cubeDrawn = true;
 
   float qI = ImuState::qI, qJ = ImuState::qJ, qK = ImuState::qK, qR = ImuState::qR;

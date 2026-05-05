@@ -1,6 +1,7 @@
 #include "settings_screen.h"
 #include "menu_screen.h"
 #include "app_state.h"
+#include "display.h"
 
 
 int settingsScrollY = 0;
@@ -63,7 +64,7 @@ int settingsTotalH() {
 }
 
 int settingRowY(int row) {
-  int y = Config::HEADER_H + SET_START_Y - settingsScrollY;
+  int y = Display::HEADER_H + SET_START_Y - settingsScrollY;
   for (int i = 0; i < row; i++)
     y += settingRows[i].isSectionHeader ? SET_HEADER_H : SET_ROW_H;
   return y;
@@ -72,83 +73,83 @@ int settingRowY(int row) {
 
 void drawSettingRowAt(int row, int y) {
   SRow &r = settingRows[row];
-  int visBottom = Config::SCREEN_H - SET_RESET_H;
+  int visBottom = Display::SCREEN_H - SET_RESET_H;
   int rowH = r.isSectionHeader ? SET_HEADER_H : SET_ROW_H;
 
-  if (y + rowH < Config::HEADER_H || y > visBottom)
+  if (y + rowH < Display::HEADER_H || y > visBottom)
     return;
-  int clipTop = max(y, Config::HEADER_H);
+  int clipTop = max(y, Display::HEADER_H);
   int clipBottom = min(y + rowH, visBottom);
   if (clipTop >= clipBottom)
     return;
 
   int sprH = clipBottom - clipTop;
-  spr.deleteSprite();
-  spr.createSprite(Config::SCREEN_W, sprH);
-  spr.fillSprite(Config::C_BG);
+  Display::spr.deleteSprite();
+  Display::spr.createSprite(Display::SCREEN_W, sprH);
+  Display::spr.fillSprite(Display::Colors::BG);
 
   int localY = y - clipTop;
 
   if (r.isSectionHeader) {
-    spr.drawFastHLine(0, localY + SET_HEADER_H - 1, Config::SCREEN_W,
-                      Config::C_AMBER);
-    spr.setTextColor(Config::C_AMBER, Config::C_BG);
-    spr.drawString(r.label, 8, localY + 5, 1);
+    Display::spr.drawFastHLine(0, localY + SET_HEADER_H - 1, Display::SCREEN_W,
+                      Display::Colors::AMBER);
+    Display::spr.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
+    Display::spr.drawString(r.label, 8, localY + 5, 1);
   } else {
-    spr.drawFastHLine(0, sprH - 2, Config::SCREEN_W, Config::C_GREEN_FAINT);
-    spr.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-    spr.drawString(r.label, 6, localY + 6, 1);
-    spr.setTextColor(Config::C_GREEN_FAINT, Config::C_BG);
-    spr.drawString(r.desc, 6, localY + 18, 1);
+    Display::spr.drawFastHLine(0, sprH - 2, Display::SCREEN_W, Display::Colors::GREEN_FAINT);
+    Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+    Display::spr.drawString(r.label, 6, localY + 6, 1);
+    Display::spr.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
+    Display::spr.drawString(r.desc, 6, localY + 18, 1);
 
-    int bw = 68, bh = 30, bx = Config::SCREEN_W - bw - 4, by2 = localY + 7;
-    spr.drawRoundRect(bx, by2, bw, bh, 3, Config::C_GREEN_DIM);
-    spr.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-    spr.drawString("<", bx + 4, by2 + 10, 1);
-    spr.setTextColor(Config::C_GREEN, Config::C_BG);
-    spr.drawCentreString(r.getLabel(*r.idx), bx + bw / 2, by2 + 10, 1);
-    spr.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-    spr.drawRightString(">", bx + bw - 3, by2 + 10, 1);
+    int bw = 68, bh = 30, bx = Display::SCREEN_W - bw - 4, by2 = localY + 7;
+    Display::spr.drawRoundRect(bx, by2, bw, bh, 3, Display::Colors::GREEN_DIM);
+    Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+    Display::spr.drawString("<", bx + 4, by2 + 10, 1);
+    Display::spr.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+    Display::spr.drawCentreString(r.getLabel(*r.idx), bx + bw / 2, by2 + 10, 1);
+    Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+    Display::spr.drawRightString(">", bx + bw - 3, by2 + 10, 1);
   }
 
-  spr.pushSprite(0, clipTop);
-  spr.deleteSprite();
+  Display::spr.pushSprite(0, clipTop);
+  Display::spr.deleteSprite();
 }
 
 
 void drawSettingsScreen() {
-  tft.fillScreen(Config::C_BG);
-  tft.fillRect(0, 0, Config::SCREEN_W, Config::HEADER_H, Config::C_BG);
-  tft.drawFastHLine(0, Config::HEADER_H - 1, Config::SCREEN_W, Config::C_SEP);
-  tft.drawRoundRect(3, 3, 58, Config::HEADER_H - 6, 3, Config::C_GREEN_DIM);
-  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-  tft.drawCentreString("< BACK", 32, 12, 1);
-  tft.setTextColor(Config::C_GREEN, Config::C_BG);
-  tft.drawCentreString("SETTINGS", 124, 8, 2);
+  Display::tft.fillScreen(Display::Colors::BG);
+  Display::tft.fillRect(0, 0, Display::SCREEN_W, Display::HEADER_H, Display::Colors::BG);
+  Display::tft.drawFastHLine(0, Display::HEADER_H - 1, Display::SCREEN_W, Display::Colors::SEP);
+  Display::tft.drawRoundRect(3, 3, 58, Display::HEADER_H - 6, 3, Display::Colors::GREEN_DIM);
+  Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+  Display::tft.drawCentreString("< BACK", 32, 12, 1);
+  Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+  Display::tft.drawCentreString("SETTINGS", 124, 8, 2);
 
   for (int i = 0; i < NUM_SETTING_ROWS; i++)
     drawSettingRowAt(i, settingRowY(i));
 
-  tft.fillRect(0, Config::SCREEN_H - SET_RESET_H, Config::SCREEN_W, SET_RESET_H,
-               Config::C_BG);
-  tft.drawFastHLine(0, Config::SCREEN_H - SET_RESET_H, Config::SCREEN_W,
-                    Config::C_SEP);
-  int ry = Config::SCREEN_H - SET_RESET_H + 5;
-  tft.drawRect(24, ry, 192, 30, Config::C_GREEN_DIM);
-  tft.drawRect(26, ry + 2, 188, 26, Config::C_GREEN_FAINT);
-  tft.setTextColor(Config::C_RED, Config::C_BG);
-  tft.drawCentreString("[ RESET DEFAULTS ]", 120, ry + 8, 2);
+  Display::tft.fillRect(0, Display::SCREEN_H - SET_RESET_H, Display::SCREEN_W, SET_RESET_H,
+               Display::Colors::BG);
+  Display::tft.drawFastHLine(0, Display::SCREEN_H - SET_RESET_H, Display::SCREEN_W,
+                    Display::Colors::SEP);
+  int ry = Display::SCREEN_H - SET_RESET_H + 5;
+  Display::tft.drawRect(24, ry, 192, 30, Display::Colors::GREEN_DIM);
+  Display::tft.drawRect(26, ry + 2, 188, 26, Display::Colors::GREEN_FAINT);
+  Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
+  Display::tft.drawCentreString("[ RESET DEFAULTS ]", 120, ry + 8, 2);
 }
 
 
 void handleSettingsTouch(int tx, int ty) {
-  if (inRect(tx, ty, 3, 3, 58, Config::HEADER_H - 6)) {
+  if (inRect(tx, ty, 3, 3, 58, Display::HEADER_H - 6)) {
     applySettings();
-    currentScreen = SCREEN_MENU;
+    AppState::currentScreen = Display::Screen::MENU;
     startMenu();
     return;
   }
-  int ry = Config::SCREEN_H - SET_RESET_H + 5;
+  int ry = Display::SCREEN_H - SET_RESET_H + 5;
   if (inRect(tx, ty, 24, ry, 192, 30)) {
     cfg = DEFAULT_SETTINGS;
     settingsScrollY = 0;
@@ -165,10 +166,10 @@ void handleSettingsTouch(int tx, int ty) {
     int y = settingRowY(i);
     if (ty < y || ty >= y + SET_ROW_H - 2)
       continue;
-    if (y < Config::HEADER_H || y > Config::SCREEN_H - SET_RESET_H)
+    if (y < Display::HEADER_H || y > Display::SCREEN_H - SET_RESET_H)
       continue;
 
-    int bw = 68, bh = 24, bx = Config::SCREEN_W - bw - 4, by2 = y + 6;
+    int bw = 68, bh = 24, bx = Display::SCREEN_W - bw - 4, by2 = y + 6;
     if (inRect(tx, ty, bx, by2, bw / 3, bh)) {
       if (*settingRows[i].idx > 0)
         (*settingRows[i].idx)--;
