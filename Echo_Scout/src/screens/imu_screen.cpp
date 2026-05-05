@@ -4,9 +4,6 @@
 #include "device_state.h"
 
 
-// ═══════════════════════════════════════════════════════════
-//  CUBE GEOMETRY
-// ═══════════════════════════════════════════════════════════
 #define CUBE_SIZE 55
 #define CUBE_CX 120
 #define CUBE_CY 148
@@ -14,21 +11,17 @@
 #define PROJ_DIST 280.0f
 
 static const float cubeVerts[8][3] = {
-    {-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1}, // back  0-3
-    {-1, -1, 1},  {1, -1, 1},  {1, 1, 1},  {-1, 1, 1},  // front 4-7
+    {-1, -1, -1}, {1, -1, -1}, {1, 1, -1}, {-1, 1, -1},
+    {-1, -1, 1},  {1, -1, 1},  {1, 1, 1},  {-1, 1, 1},
 };
 
 static const uint8_t cubeEdges[12][2] = {
-    {0, 1}, {1, 2}, {2, 3}, {3, 0}, // back face
-    {4, 5}, {5, 6}, {6, 7}, {7, 4}, // front face
-    {0, 4}, {1, 5}, {2, 6}, {3, 7}, // connecting edges
+    {0, 1}, {1, 2}, {2, 3}, {3, 0},
+    {4, 5}, {5, 6}, {6, 7}, {7, 4},
+    {0, 4}, {1, 5}, {2, 6}, {3, 7},
 };
 
-// ═══════════════════════════════════════════════════════════
-//  ROTATION + PROJECTION
-//  Sensor: X=right, Y=down, Z=out back of display
-//  Screen: X=right, Y=up(inverted), depth=Z
-// ═══════════════════════════════════════════════════════════
+
 static void rotatePoint(float x, float y, float z, float& ox, float& oy,
                         float& oz) {
   float r = ImuState::qR, i = ImuState::qI, j = ImuState::qJ, k = ImuState::qK;
@@ -43,30 +36,54 @@ static void rotatePoint(float x, float y, float z, float& ox, float& oy,
 static void project(float x, float y, float z, int& sx, int& sy) {
   float scale = PROJ_DIST / (PROJ_DIST + z * CUBE_SIZE);
   sx = CUBE_CX + (int)(x * CUBE_SIZE * scale);
-  sy = CUBE_CY + (int)(-y * CUBE_SIZE * scale); // invert Y so up is up
+  sy = CUBE_CY + (int)(-y * CUBE_SIZE * scale);
   sx = constrain(sx, 2, Config::SCREEN_W - 2);
   sy = constrain(sy, Config::HEADER_H + 2, CUBE_YMAX);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  DRAW / ERASE CUBE
-// ═══════════════════════════════════════════════════════════
+
 static int prevSx[8], prevSy[8];
 static bool cubeDrawn = false;
 
+
+#define X_COL_FAR   0xA000
+#define X_COL_NEAR  Config::C_RED
+
+static void drawThickLine(int x0, int y0, int x1, int y1, uint16_t col) {
+  tft.drawLine(x0, y0, x1, y1, col);
+  int dx = x1 - x0, dy = y1 - y0;
+  if (abs(dx) >= abs(dy)) {
+    tft.drawLine(x0, y0-1, x1, y1-1, col);
+    tft.drawLine(x0, y0+1, x1, y1+1, col);
+  } else {
+    tft.drawLine(x0-1, y0, x1-1, y1, col);
+    tft.drawLine(x0+1, y0, x1+1, y1, col);
+  }
+}
+
 static void drawCubeEdges(uint16_t col) {
   int sx[8], sy[8];
+  float rz[8];
+
   for (int v = 0; v < 8; v++) {
-    float rx, ry, rz;
-    rotatePoint(cubeVerts[v][0], cubeVerts[v][1], cubeVerts[v][2], rx, ry, rz);
-    project(rx, ry, rz, sx[v], sy[v]);
+    float rx, ry;
+    rotatePoint(cubeVerts[v][0], cubeVerts[v][1], cubeVerts[v][2], rx, ry, rz[v]);
+    project(rx, ry, rz[v], sx[v], sy[v]);
     prevSx[v] = sx[v];
     prevSy[v] = sy[v];
   }
+
   for (int e = 0; e < 12; e++) {
     uint8_t a = cubeEdges[e][0], b = cubeEdges[e][1];
     tft.drawLine(sx[a], sy[a], sx[b], sy[b], col);
   }
+
+  
+  float botZ = (rz[0] + rz[1] + rz[5] + rz[4]) * 0.25f;
+  float topZ = (rz[3] + rz[2] + rz[6] + rz[7]) * 0.25f;
+  uint16_t xCol = (botZ <= topZ) ? X_COL_FAR : X_COL_NEAR;
+  drawThickLine(sx[0], sy[0], sx[5], sy[5], xCol);
+  drawThickLine(sx[1], sy[1], sx[4], sy[4], xCol);
 }
 
 static void eraseCube() {
@@ -76,9 +93,7 @@ static void eraseCube() {
                CUBE_YMAX - Config::HEADER_H - 2, Config::C_BG);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  EULER READOUT
-// ═══════════════════════════════════════════════════════════
+
 static float prevRoll = -9999, prevPitch = -9999, prevYaw = -9999;
 
 static void drawEuler(float roll, float pitch, float yaw) {
@@ -107,9 +122,7 @@ static void drawEuler(float roll, float pitch, float yaw) {
   tft.drawCentreString(buf, pad + 2 * (cardW + pad) + cardW / 2, valY, 2);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PUBLIC — BASE SCREEN
-// ═══════════════════════════════════════════════════════════
+
 void drawImuBase() {
   tft.fillScreen(Config::C_BG);
   cubeDrawn = false;
@@ -150,9 +163,7 @@ void drawImuBase() {
   cubeDrawn = true;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PUBLIC — UPDATE
-// ═══════════════════════════════════════════════════════════
+
 void tickIMU() {
   imuUpdate();
 
@@ -160,10 +171,8 @@ void tickIMU() {
   drawCubeEdges(Config::C_GREEN);
   cubeDrawn = true;
 
-  // Local aliases for Euler math — rotatePoint() reads ImuState:: directly
   float qI = ImuState::qI, qJ = ImuState::qJ, qK = ImuState::qK, qR = ImuState::qR;
 
-  // Euler from corrected quaternion
   float sinr = 2.0f * (qR * qI + qJ * qK);
   float cosr = 1.0f - 2.0f * (qI * qI + qJ * qJ);
   float roll = atan2f(sinr, cosr) * 180.0f / PI;

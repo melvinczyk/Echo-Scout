@@ -10,7 +10,7 @@ constexpr int SET_HEADER_H = 22;
 constexpr int SET_START_Y = 4;
 constexpr int SET_RESET_H = 44;
 
-constexpr int NUM_SETTING_ROWS = 11;
+constexpr int NUM_SETTING_ROWS = 13;
 
 struct SRow {
   const char *label;

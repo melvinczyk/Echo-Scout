@@ -29,6 +29,8 @@ extern MenuState menuState;
 void drawLaunchButton(bool highlight);
 void drawSettingsMenuButton();
 void drawImuMenuButton();
+void drawBatteryMenuButton();
+void drawPowerButton();
 void drawAsciiArt(const char** lines, int numLines, int charW, int lineH,
                   int startX, int startY, uint16_t col);
 void drawScoutArt(uint16_t col);

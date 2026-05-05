@@ -11,7 +11,8 @@ struct Settings {
   uint8_t accRangeIdx;
   uint8_t speedGateIdx;
   uint8_t moveThreshIdx;
-  bool smoothingOn;
+  bool    smoothingOn;
+  uint8_t brightnessIdx;
 };
 
 extern const uint8_t hitsVals[];
@@ -36,8 +37,11 @@ constexpr uint8_t NUM_AR = 8;
 constexpr uint8_t NUM_SG = 5;
 constexpr uint8_t NUM_MVTHR = 7;
 
+constexpr uint8_t NUM_BL = 5;
 constexpr float SMOOTH_ALPHA = 0.4f;
 
+extern const uint8_t blVals[];
+extern const char* blLabels[];
 extern const Settings DEFAULT_SETTINGS;
 extern Settings cfg;
 
@@ -52,6 +56,8 @@ inline float cfgMoveThresh() {
 }
 inline bool cfgSmoothing() { return cfg.smoothingOn; }
 
+inline uint8_t cfgBrightness() { return blVals[cfg.brightnessIdx]; }
 void applySettings();
+void initBacklight();
 
 #endif

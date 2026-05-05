@@ -4,6 +4,6 @@
 #include <Adafruit_BNO08x.h>
 
 bool imuInit();
-void imuUpdate();
+bool imuUpdate();
 
 #endif

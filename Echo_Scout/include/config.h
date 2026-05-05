@@ -8,6 +8,8 @@
 #define SCREEN_RADAR    1
 #define SCREEN_SETTINGS 2
 #define SCREEN_IMU      3
+#define SCREEN_BATTERY  4
+#define SCREEN_POWER_CONFIRM 5
 
 namespace Config {
     // Serial
@@ -36,7 +38,7 @@ namespace Config {
     constexpr uint16_t C_GREEN = 0x07E0;
     constexpr uint16_t C_GREEN_DIM = 0x0300;
     constexpr uint16_t C_GREEN_FAINT = 0x0180;
-    constexpr uint16_t C_AMBER = 0xFEA0;
+    constexpr uint16_t C_AMBER = 0xFAE0;
     constexpr uint16_t C_WHITE = 0xFFFF;
     constexpr uint16_t C_SEP = 0x02C0;
     constexpr uint16_t C_RED = 0xF800;
@@ -49,7 +51,12 @@ namespace Config {
     constexpr float MAX_RANGE_MM = 5000.0f;
 
     // Sensors
-    constexpr int IMU_ADDRESS = 0x4A;
+    constexpr int     IMU_ADDRESS  = 0x4A;
+    constexpr uint8_t TFT_BL_PIN   = 45;
+    constexpr uint8_t BL_PWM_CH    =  0;
+    constexpr uint32_t BL_PWM_FREQ = 20000;
+    constexpr uint8_t BL_PWM_RES   =  8;
+    constexpr uint8_t WAKE_PIN      =  0;
 }
 
 

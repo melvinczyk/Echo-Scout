@@ -1,5 +1,7 @@
 #include "settings.h"
 #include "grid.h"
+#include "config.h"
+#include <Arduino.h>
 
 
 const uint8_t hitsVals[] = {1, 2, 3, 4, 5};
@@ -24,7 +26,19 @@ const uint8_t moveThreshVals[] = {0, 10, 30, 50, 100, 150, 200};
 const char *moveThreshLabels[] = {"OFF", "10mm","30mm", "50mm",
                                   "100mm", "150mm", "200mm"};
 
-const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true};
+const uint8_t blVals[]     = {25, 51, 102, 178, 255};
+const char* blLabels[]     = {"10%", "20%", "40%", "70%", "100%"};
+
+const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true, 4};
 Settings cfg = DEFAULT_SETTINGS;
 
-void applySettings() { buildGridTable(); }
+void initBacklight() {
+    ledcSetup(Config::BL_PWM_CH, Config::BL_PWM_FREQ, Config::BL_PWM_RES);
+    ledcAttachPin(Config::TFT_BL_PIN, Config::BL_PWM_CH);
+    ledcWrite(Config::BL_PWM_CH, blVals[cfg.brightnessIdx]);
+}
+
+void applySettings() {
+    buildGridTable();
+    ledcWrite(Config::BL_PWM_CH, blVals[cfg.brightnessIdx]);
+}

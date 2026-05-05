@@ -26,6 +26,7 @@ static const char *sgLabel(uint8_t i) { return speedGateLabels[i]; }
 static const char *mvLabel(uint8_t i) { return moveThreshLabels[i]; }
 static const char *smLabel(uint8_t i) { return i ? "ON" : "OFF"; }
 static const char *secLabel(uint8_t i) { return ""; }
+static const char *blLabel(uint8_t i)  { return blLabels[i]; }
 
 
 SRow settingRows[NUM_SETTING_ROWS] = {
@@ -48,6 +49,9 @@ SRow settingRows[NUM_SETTING_ROWS] = {
      mvLabel, false},
     {"SMOOTHING", "position blend at 0.4", (uint8_t *)&cfg.smoothingOn, 2,
      smLabel, false},
+    {"-- DISPLAY --", "", nullptr, 0, secLabel, true},
+    {"BACKLIGHT", "screen brightness", &cfg.brightnessIdx, NUM_BL,
+     blLabel, false},
 };
 
 

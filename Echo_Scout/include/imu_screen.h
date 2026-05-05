@@ -4,6 +4,7 @@
 #include <Adafruit_BNO08x.h>
 #include "radar_screen.h"
 
+void tickIMU();
 void drawImuScreen();
 void drawImuBase();
 

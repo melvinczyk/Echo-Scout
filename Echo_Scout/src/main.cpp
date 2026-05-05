@@ -7,9 +7,11 @@
 #include "imu_screen.h"
 #include "touch.h"
 #include "imu.h"
+#include "battery_screen.h"
+#include <esp_sleep.h>
 
-// Definitions for symbols declared in app_state.h
-bool radarFound   = true;
+
+bool radarFound   = false;  // set true on first valid frame
 bool imuFound     = false;
 int  currentScreen = SCREEN_MENU;
 
@@ -20,7 +22,55 @@ static uint8_t frameState = 0;
 static float radarDistance = 0, radarAngle = 0, radarSpeed = 0;
 static float radarX = 0, radarY = 0;
 static bool  radarPresent = false;
-static bool  wasTouched   = false;
+static bool  wasTouched       = false;
+
+
+static void executePowerOff() {
+  // Fade backlight out gracefully
+  int startBright = blVals[cfg.brightnessIdx];
+  for (int v = startBright; v >= 0; v -= 6) {
+    ledcWrite(Config::BL_PWM_CH, max(v, 0));
+    delay(12);
+  }
+  ledcWrite(Config::BL_PWM_CH, 0);
+
+  ledcWrite(Config::BL_PWM_CH, 8);
+  tft.fillScreen(Config::C_BG);
+  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+  tft.drawCentreString("POWERING OFF", 120, 130, 2);
+  tft.setTextColor(Config::C_GREEN_FAINT, Config::C_BG);
+  tft.drawCentreString("Hold BOOT button", 120, 165, 1);
+  tft.drawCentreString("to wake device", 120, 180, 1);
+  delay(1800);
+
+  ledcWrite(Config::BL_PWM_CH, 0);
+  esp_deep_sleep_start();
+}
+
+static void drawPowerConfirm() {
+  tft.fillScreen(Config::C_BG);
+  tft.drawRect(2, 2, 236, 316, Config::C_RED);
+  tft.drawRect(4, 4, 232, 312, Config::C_RED);
+
+  tft.setTextColor(Config::C_RED, Config::C_BG);
+  tft.drawCentreString("POWER OFF?", 120, 70, 4);
+
+  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+  tft.drawCentreString("Press BOOT button to", 120, 130, 1);
+  tft.drawCentreString("wake the device again.", 120, 145, 1);
+
+  // CONFIRM button
+  tft.drawRect(20, 180, 200, 44, Config::C_RED);
+  tft.drawRect(22, 182, 196, 40, Config::C_RED);
+  tft.setTextColor(Config::C_RED, Config::C_BG);
+  tft.drawCentreString("[ CONFIRM OFF ]", 120, 194, 2);
+
+  // CANCEL button
+  tft.drawRect(20, 236, 200, 44, Config::C_GREEN_DIM);
+  tft.drawRect(22, 238, 196, 40, Config::C_GREEN_DIM);
+  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+  tft.drawCentreString("[ CANCEL ]", 120, 250, 2);
+}
 
 
 void setup() {
@@ -32,6 +82,8 @@ void setup() {
   tft.setRotation(0);
   tft.fillScreen(Config::C_BG);
   buildGridTable();
+  initBacklight();
+  esp_sleep_enable_ext0_wakeup((gpio_num_t)Config::WAKE_PIN, 0);
   imuFound = imuInit();
   Serial1.begin(Config::RADAR_BAUD, SERIAL_8N1, Config::RADAR_RX,
                 Config::RADAR_TX);
@@ -66,6 +118,13 @@ static void processSerial() {
       frameBuf[frameIdx++] = b;
       if (frameIdx >= 26) {
         if (frameBuf[24] == 0x55 && frameBuf[25] == 0xCC) {
+          if (!radarFound) {
+            radarFound = true;
+            if (currentScreen == SCREEN_RADAR) {
+              radarResetState();
+              drawRadarBase();
+            }
+          }
           RawTarget t[3];
           t[0] = parseTarget(frameBuf + 0);
           t[1] = parseTarget(frameBuf + 8);
@@ -136,7 +195,9 @@ static void tickScreens() {
   if (currentScreen == SCREEN_MENU)
     tickMenu();
   if (currentScreen == SCREEN_IMU)
-    imuUpdate();
+    tickIMU();
+  if (currentScreen == SCREEN_BATTERY)
+    tickBattery();
 }
 
 static void handleTouch() {
@@ -168,18 +229,32 @@ static void handleTouch() {
     }
   } else {
     if (touched && !wasTouched) {
-      if (currentScreen == SCREEN_MENU) {
-        if (inRect(tx, ty, 24, 220, 192, 50)) {
+      if (currentScreen == SCREEN_POWER_CONFIRM) {
+        if (inRect(tx, ty, 20, 180, 200, 44)) {
+          executePowerOff();
+        }
+        if (inRect(tx, ty, 20, 236, 200, 44)) {
+          currentScreen = SCREEN_MENU;
+          startMenu();
+        }
+      } else if (currentScreen == SCREEN_MENU) {
+        if (inRect(tx, ty, 12, 165, 216, 48)) {          // RADAR
           currentScreen = SCREEN_RADAR;
           radarResetState();
           drawRadarBase();
-        } else if (inRect(tx, ty, 60, 178, 120, 28)) {
+        } else if (inRect(tx, ty, 8, 219, 72, 28)) {     // SETTINGS
           currentScreen = SCREEN_SETTINGS;
           settingsScrollY = 0;
           drawSettingsScreen();
-        } else if (inRect(tx, ty, 72, 280, 96, 22)) {
+        } else if (inRect(tx, ty, 84, 219, 72, 28)) {    // IMU
           currentScreen = SCREEN_IMU;
           drawImuBase();
+        } else if (inRect(tx, ty, 160, 219, 72, 28)) {   // BATTERY
+          currentScreen = SCREEN_BATTERY;
+          drawBatteryBase();
+        } else if (inRect(tx, ty, 40, 295, 160, 18)) {   // POWER OFF
+          currentScreen = SCREEN_POWER_CONFIRM;
+          drawPowerConfirm();
         }
       } else {
         if (inRect(tx, ty, 3, 3, 64, Config::HEADER_H - 6)) {

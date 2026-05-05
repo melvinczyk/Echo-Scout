@@ -194,7 +194,10 @@ void drawConeGrid() {
     tft.drawLine(Config::APEX_X, Config::APEX_Y, ex, ey, col);
   }
 
-  tft.fillRect(0, 0, Config::SCREEN_W, CONE_TOP, Config::C_BG);
+  
+  if (CONE_TOP > Config::HEADER_H)
+    tft.fillRect(0, Config::HEADER_H, Config::SCREEN_W,
+                 Config::DASH_Y - Config::HEADER_H, Config::C_BG);
   tft.fillCircle(Config::APEX_X, Config::APEX_Y, 4, Config::C_GREEN);
 
   // Inner ring labels

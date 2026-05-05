@@ -211,7 +211,9 @@ void drawRadarBase() {
   clearAllFarZones();
   resetDashboard();
   buildGridTable();
+
+  drawConeGrid();
+  drawHeader();
   drawDashboardFrame();
   updateDashboard(0, 0, 0, false);
-  drawConeGrid();
 }

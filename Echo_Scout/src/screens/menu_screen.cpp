@@ -1,7 +1,9 @@
 #include "menu_screen.h"
+#include "app_state.h"
 
 MenuState menuState = {
     MenuAnimPhase::Corners,
+    0,
     0,
     false,
     0UL,
@@ -20,56 +22,16 @@ MenuState menuState = {
     }
 };
 
-// ═══════════════════════════════════════════════════════════
-//  BUTTONS
-// ═══════════════════════════════════════════════════════════
-void drawLaunchButton(bool highlight) {
-  int bx = 24, by = 220, bw = 192, bh = 50;
-  uint16_t col = highlight ? Config::C_GREEN : Config::C_GREEN_DIM;
-  tft.fillRect(bx, by, bw, bh, Config::C_BG);
-  tft.drawRect(bx, by, bw, bh, Config::C_GREEN_FAINT);
-  tft.drawRect(bx + 2, by + 2, bw - 4, bh - 4, col);
-  tft.drawFastHLine(bx + 6, by + 6, 12, col);
-  tft.drawFastVLine(bx + 6, by + 6, 12, col);
-  tft.drawFastHLine(bx + bw - 18, by + 6, 12, col);
-  tft.drawFastVLine(bx + bw - 7, by + 6, 12, col);
-  tft.drawFastHLine(bx + 6, by + bh - 7, 12, col);
-  tft.drawFastVLine(bx + 6, by + bh - 18, 12, col);
-  tft.drawFastHLine(bx + bw - 18, by + bh - 7, 12, col);
-  tft.drawFastVLine(bx + bw - 7, by + bh - 18, 12, col);
-  tft.setTextColor(col, Config::C_BG);
-  tft.drawCentreString("[ ACTIVATE ]", 120, by + 16, 4);
-}
-
-void drawSettingsMenuButton() {
-  int bx = 60, by = 178, bw = 120, sh = 28;
-  tft.fillRect(bx, by, bw, sh, Config::C_BG);
-  tft.drawRect(bx, by, bw, sh, Config::C_AMBER);
-  tft.drawRect(bx + 2, by + 2, bw - 4, sh - 4, Config::C_AMBER);
-  tft.setTextColor(Config::C_AMBER, Config::C_BG);
-  tft.drawCentreString("[ SETTINGS ]", 120, by + 8, 2);
-}
-
-void drawImuMenuButton() {
-  int bx = 72, by = 280, bw = 96, sh = 22;
-  tft.fillRect(bx, by, bw, sh, Config::C_BG);
-  tft.drawRect(bx, by, bw, sh, Config::C_GREEN_FAINT);
-  tft.setTextColor(Config::C_GREEN_FAINT, Config::C_BG);
-  tft.drawCentreString("[ IMU ]", 120, by + 6, 1);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  ASCII ART
-// ═══════════════════════════════════════════════════════════
 void drawAsciiArt(const char** lines, int numLines, int charW, int lineH,
                   int startX, int startY, uint16_t col) {
+  tft.setTextColor(col, Config::C_BG);
   for (int row = 0; row < numLines; row++) {
     const char *line = lines[row];
     int len = strlen(line);
     for (int c = 0; c < len; c++) {
+      if (line[c] == ' ') continue;
       char buf[2] = {line[c], 0};
-      if (line[c] != ' ')
-        tft.drawString(buf, startX + c * charW, startY + row * lineH, 1);
+      tft.drawString(buf, startX + c * charW, startY + row * lineH, 1);
     }
   }
 }
@@ -84,46 +46,10 @@ void drawScoutArt(uint16_t col) {
       "        \\/     \\/                  ",
   };
   tft.setTextColor(col, Config::C_BG);
-  drawAsciiArt(scoutArt, 6, 5, 9, 30, 78, col);
+  drawAsciiArt(scoutArt, 6, 5, 9, 30, 80, col);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  START MENU
-// ═══════════════════════════════════════════════════════════
-void startMenu() {
-  menuState.launchBlink   = false;
-  menuState.scoutGlow     = 0.0f;
-  menuState.scoutGlowUp   = true;
-  menuState.animPhase     = MenuAnimPhase::Corners;
-  menuState.cornerStep    = 0;
-  menuState.timer         = millis();
-  menuState.scoutGlowTimer = millis();
-
-  tft.fillScreen(Config::C_BG);
-
-  // Outer frame
-  tft.drawRect(2, 2, 236, 316, Config::C_GREEN_FAINT);
-
-  // Title box
-  tft.drawRect(8, 8, 224, 138, Config::C_GREEN_DIM);
-  tft.drawRect(12, 12, 216, 130, Config::C_GREEN);
-
-  // Corner ticks
-  tft.drawFastHLine(16, 16, 16, Config::C_GREEN);
-  tft.drawFastVLine(16, 16, 16, Config::C_GREEN);
-  tft.drawFastHLine(212, 16, 16, Config::C_GREEN);
-  tft.drawFastVLine(227, 16, 16, Config::C_GREEN);
-  tft.drawFastHLine(16, 138, 16, Config::C_GREEN);
-  tft.drawFastVLine(16, 123, 16, Config::C_GREEN);
-  tft.drawFastHLine(212, 138, 16, Config::C_GREEN);
-  tft.drawFastVLine(227, 123, 16, Config::C_GREEN);
-
-  // VERSION tag on bottom border
-  tft.fillRect(70, 138, 100, 6, Config::C_BG);
-  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
-  tft.drawCentreString("VERSION: 1.0", 120, 137, 1);
-
-  // ECHO art
+static void drawEchoArt() {
   const char *echoArt[] = {
       "___________      .__          ",
       "\\_   _____/ ____ |  |__   ____",
@@ -133,26 +59,177 @@ void startMenu() {
       "        \\/     \\/     \\/       ",
   };
   tft.setTextColor(Config::C_GREEN, Config::C_BG);
-  drawAsciiArt(echoArt, 6, 5, 9, 42, 18, Config::C_GREEN);
-  drawScoutArt(Config::C_GREEN_FAINT);
-
-  tft.drawFastHLine(16, 150, 208, Config::C_SEP);
-
-  drawSettingsMenuButton();
-  tft.drawFastHLine(16, 212, 208, Config::C_SEP);
-  drawLaunchButton(true);
-
-  drawImuMenuButton();
-
-  tft.setTextColor(Config::C_GREEN_FAINT, Config::C_BG);
+  drawAsciiArt(echoArt, 6, 5, 9, 42, 16, Config::C_GREEN);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  TICK MENU
-// ═══════════════════════════════════════════════════════════
+static void drawTitleFrame() {
+  tft.drawRect(8,  8,  224, 138, Config::C_GREEN_DIM);
+  tft.drawRect(12, 12, 216, 130, Config::C_GREEN);
+  tft.drawFastHLine(16,  16,  16, Config::C_GREEN);
+  tft.drawFastVLine(16, 16, 16, Config::C_GREEN);
+  
+  tft.drawFastHLine(207, 16,  16, Config::C_GREEN);
+  tft.drawFastVLine(223, 16,  16, Config::C_GREEN);
+
+  tft.drawFastHLine(16,  138, 16, Config::C_GREEN);
+  tft.drawFastVLine(16,  123, 16, Config::C_GREEN);
+
+  tft.drawFastHLine(207, 138, 16, Config::C_GREEN);
+  tft.drawFastVLine(223, 123, 16, Config::C_GREEN);
+  tft.fillRect(70, 138, 100, 6, Config::C_BG);
+  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+  tft.drawCentreString("VERSION: 1.0", 120, 137, 1);
+}
+
+static void drawStatusUnit(int centreX, int y, int h,
+                           bool ok, const char* okLabel, const char* errLabel) {
+  uint16_t col  = ok ? Config::C_GREEN : Config::C_RED;
+  const char* label = ok ? okLabel : errLabel;
+
+  int textW = strlen(label) * 6;
+  int unitW = 7 + 3 + textW;
+  int startX = centreX - unitW / 2;
+
+  int dotCX = startX + 3;        
+  int textX = startX + 7 + 3;       
+  int dotCY = y + h / 2;
+
+  tft.fillCircle(dotCX, dotCY, 3, col);
+  tft.setTextColor(col, Config::C_BG);
+  tft.drawString(label, textX, dotCY - 4, 1);
+}
+
+static void drawStatusBar() {
+  const int sy = 147, sh = 13;
+  tft.fillRect(0, sy, Config::SCREEN_W, sh, Config::C_BG);
+
+  tft.drawFastHLine(8, sy,      224, Config::C_SEP);
+  tft.drawFastHLine(8, sy+sh-1, 224, Config::C_SEP);
+
+  tft.drawFastVLine(120, sy+2, sh-4, Config::C_SEP);
+
+  drawStatusUnit(63,  sy, sh, radarFound, "RADAR", "NO RADAR");
+  drawStatusUnit(176, sy, sh, imuFound,   "IMU",   "NO IMU");
+}
+
+
+void drawLaunchButton(bool highlight) {
+  const int bx = 12, by = 165, bw = 216, bh = 48;
+  uint16_t col  = highlight ? Config::C_GREEN     : Config::C_GREEN_DIM;
+  uint16_t col2 = highlight ? Config::C_GREEN_DIM : Config::C_GREEN_FAINT;
+
+  tft.fillRect(bx, by, bw, bh, Config::C_BG);
+  tft.drawRect(bx,   by,   bw,   bh,   col2);
+  tft.drawRect(bx+2, by+2, bw-4, bh-4, col);
+
+  const int arm = 12;
+  tft.drawFastHLine(bx+6,        by+6,        arm, col);
+  tft.drawFastVLine(bx+6,        by+6,        arm, col);
+  tft.drawFastHLine(bx+bw-arm-6, by+6,        arm, col);
+  tft.drawFastVLine(bx+bw-7,     by+6,        arm, col);
+  tft.drawFastHLine(bx+6,        by+bh-7,     arm, col);
+  tft.drawFastVLine(bx+6,        by+bh-arm-6, arm, col);
+  tft.drawFastHLine(bx+bw-arm-6, by+bh-7,     arm, col);
+  tft.drawFastVLine(bx+bw-7,     by+bh-arm-6, arm, col);
+
+  int ix = bx + 22, iy = by + bh/2;
+  tft.drawFastVLine(ix, iy-8, 16, col);            
+  tft.drawLine(ix, iy, ix-6, iy-7, col);            
+  tft.drawLine(ix, iy, ix+6, iy-7, col);          
+  tft.drawFastHLine(ix-7, iy, 15, col);              
+  // Two arcs approximated with dots
+  for (int a = -50; a <= 50; a += 10) {
+    float r = a * 3.14159f / 180.0f;
+    int ax = ix + (int)(9 * sinf(r));
+    int ay = iy - (int)(9 * cosf(r));
+    tft.drawPixel(ax, ay, col);
+  }
+  for (int a = -50; a <= 50; a += 10) {
+    float r = a * 3.14159f / 180.0f;
+    int ax = ix + (int)(13 * sinf(r));
+    int ay = iy - (int)(13 * cosf(r));
+    tft.drawPixel(ax, ay, col);
+  }
+
+  tft.setTextColor(col, Config::C_BG);
+  tft.drawCentreString("[ RADAR ]", 128, by+14, 4);
+}
+
+
+void drawSettingsMenuButton() {
+  const int bx = 8, by = 219, bw = 72, bh = 28;
+  tft.fillRect(bx, by, bw, bh, Config::C_BG);
+  tft.drawRect(bx,   by,   bw,   bh,   Config::C_GREEN_DIM);
+  tft.drawRect(bx+2, by+2, bw-4, bh-4, Config::C_GREEN_FAINT);
+  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+  tft.drawCentreString("SETTINGS", bx+bw/2, by+9, 1);
+}
+
+void drawImuMenuButton() {
+  const int bx = 84, by = 219, bw = 72, bh = 28;
+  tft.fillRect(bx, by, bw, bh, Config::C_BG);
+  tft.drawRect(bx,   by,   bw,   bh,   Config::C_GREEN_DIM);
+  tft.drawRect(bx+2, by+2, bw-4, bh-4, Config::C_GREEN_FAINT);
+  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+  tft.drawCentreString("IMU", bx+bw/2, by+9, 1);
+}
+
+void drawBatteryMenuButton() {
+  const int bx = 160, by = 219, bw = 72, bh = 28;
+  tft.fillRect(bx, by, bw, bh, Config::C_BG);
+  tft.drawRect(bx,   by,   bw,   bh,   Config::C_GREEN_DIM);
+  tft.drawRect(bx+2, by+2, bw-4, bh-4, Config::C_GREEN_FAINT);
+  tft.setTextColor(Config::C_GREEN_DIM, Config::C_BG);
+  tft.drawCentreString("BATTERY", bx+bw/2, by+9, 1);
+}
+
+
+void drawPowerButton() {
+  const int bx = 40, by = 295, bw = 160, bh = 18;
+  tft.fillRect(0, 249, Config::SCREEN_W, 67, Config::C_BG);
+  tft.drawRect(bx, by, bw, bh, Config::C_RED);
+  tft.setTextColor(Config::C_RED, Config::C_BG);
+  tft.drawCentreString("[ POWER OFF ]", 120, by+4, 1);
+}
+
+
+void startMenu() {
+  menuState.animPhase    = MenuAnimPhase::Corners;
+  menuState.cornerStep   = 0;
+  menuState.launchBlink  = false;
+  menuState.timer        = millis();
+  menuState.scoutGlow    = 0.0f;
+  menuState.scoutGlowUp  = true;
+  menuState.scoutGlowTimer = millis();
+
+  tft.fillScreen(Config::C_BG);
+
+  tft.drawRect(2, 2, 236, 316, Config::C_GREEN_FAINT);
+
+  drawTitleFrame();
+  drawEchoArt();
+  drawScoutArt(Config::C_GREEN_FAINT);
+
+  drawStatusBar();
+
+  tft.drawFastHLine(8, 161, 224, Config::C_SEP);
+  tft.drawFastHLine(8, 215, 224, Config::C_SEP);
+  tft.drawFastHLine(8, 249, 224, Config::C_SEP);
+  tft.drawFastHLine(8, 291, 224, Config::C_SEP);
+
+  drawLaunchButton(true);
+  drawSettingsMenuButton();
+  drawImuMenuButton();
+  drawBatteryMenuButton();
+  drawPowerButton();
+}
+
+
 void tickMenu() {
   unsigned long now = millis();
+
   switch (menuState.animPhase) {
+
   case MenuAnimPhase::Corners:
     if (now - menuState.timer >= 55) {
       menuState.timer = now;
@@ -169,6 +246,7 @@ void tickMenu() {
       }
     }
     break;
+
   case MenuAnimPhase::Hold:
     if (now - menuState.timer >= 550) {
       menuState.timer       = now;
