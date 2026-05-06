@@ -2,6 +2,12 @@
 #include "grid.h"
 #include "config.h"
 #include <Arduino.h>
+#include <Preferences.h>
+
+static const char* NVS_NS  = "echo";
+static const char* NVS_CFG = "cfg";
+static const char* NVS_VER = "ver";
+static constexpr uint8_t CFG_VERSION = 1;
 
 
 const uint8_t hitsVals[] = {1, 2, 3, 4, 5};
@@ -29,7 +35,10 @@ const char *moveThreshLabels[] = {"OFF", "10mm","30mm", "50mm",
 const uint8_t blVals[]     = {25, 51, 102, 178, 255};
 const char* blLabels[]     = {"10%", "20%", "40%", "70%", "100%"};
 
-const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true, 4};
+const uint32_t sleepTimeoutVals[]   = {0, 30000, 60000, 120000, 300000, 600000};
+const char*    sleepTimeoutLabels[] = {"OFF", "30s", "1min", "2min", "5min", "10min"};
+
+const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true, 4, 2};
 Settings cfg = DEFAULT_SETTINGS;
 
 void initBacklight() {
@@ -38,7 +47,26 @@ void initBacklight() {
     ledcWrite(Config::BL_PWM_CH, blVals[cfg.brightnessIdx]);
 }
 
+void saveSettings() {
+    Preferences prefs;
+    prefs.begin(NVS_NS, false);
+    prefs.putUChar(NVS_VER, CFG_VERSION);
+    prefs.putBytes(NVS_CFG, &cfg, sizeof(cfg));
+    prefs.end();
+}
+
+void loadSettings() {
+    Preferences prefs;
+    prefs.begin(NVS_NS, true);
+    uint8_t ver = prefs.getUChar(NVS_VER, 0);
+    if (ver == CFG_VERSION)
+        prefs.getBytes(NVS_CFG, &cfg, sizeof(cfg));
+    prefs.end();
+}
+
 void applySettings() {
+    gridDirty = true;
     buildGridTable();
     ledcWrite(Config::BL_PWM_CH, blVals[cfg.brightnessIdx]);
+    saveSettings();
 }

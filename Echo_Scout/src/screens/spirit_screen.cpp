@@ -4,32 +4,22 @@
 #include "display.h"
 #include "device_state.h"
 
-// ── 3-D Spirit Level ──────────────────────────────────────────────────────────
-// A ball rolls inside a circular bowl.  Its XY displacement is proportional
-// to roll (X) and pitch (Y) extracted from the quaternion.  The ball position
-// is physics-smoothed with a simple damped integrator so it glides realistically.
-// A cross-hair, ring graduations, and a "LEVEL" indicator complete the display.
-
 static const int CX          = SpiritScreen::CX;
 static const int CY          = SpiritScreen::CY;
 static const int R           = SpiritScreen::RADIUS;
 static const int BALL_RADIUS = SpiritScreen::BALL_R;
 
-// Colour palette
 static constexpr uint16_t COL_BOWL    = Display::Colors::GREEN_DIM;
 static constexpr uint16_t COL_BALL_OK = Display::Colors::GREEN;
 static constexpr uint16_t COL_BALL_NG = Display::Colors::RED;
 static constexpr uint16_t COL_CROSS   = Display::Colors::GREEN_DIM;
 static constexpr uint16_t COL_CENTRE  = Display::Colors::GREEN;
 
-// Centre dead-zone radius (px) — ball is green when inside this
 static constexpr int DEAD_ZONE = 12;
 
-// Max ball displacement in pixels (at ±45° tilt)
 static constexpr float MAX_DISP = (float)(R - BALL_RADIUS - 4);
 static constexpr float TILT_SCALE = MAX_DISP / 45.0f;  // px per degree
 
-// Physics state
 static float bx = 0.0f, by = 0.0f;   // current ball position (relative to CX,CY)
 static float vx = 0.0f, vy = 0.0f;   // velocity
 static int   prevBx = 0, prevBy = 0; // last drawn position (screen coords)
@@ -38,7 +28,6 @@ static bool  ballDrawn = false;
 static const float DAMPING  = 0.75f;
 static const float ACCEL    = 0.35f;   // how strongly tilt pulls the ball
 
-// ── helpers ───────────────────────────────────────────────────────────────────
 
 static void drawStaticElements() {
     // Outer bowl rings

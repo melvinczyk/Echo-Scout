@@ -1,7 +1,6 @@
 #ifndef SETTINGS_SCREEN_H
 #define SETTINGS_SCREEN_H
 
-#include "radar_screen.h"
 #include "settings.h"
 
 
@@ -10,7 +9,7 @@ constexpr int SET_HEADER_H = 22;
 constexpr int SET_START_Y = 4;
 constexpr int SET_RESET_H = 44;
 
-constexpr int NUM_SETTING_ROWS = 13;
+constexpr int NUM_SETTING_ROWS = 15;
 
 struct SRow {
   const char *label;
@@ -22,9 +21,6 @@ struct SRow {
 };
 
 extern int settingsScrollY;
-extern int touchStartY;
-extern int touchStartScroll;
-extern bool touchMoved;
 
 extern SRow settingRows[NUM_SETTING_ROWS];
 

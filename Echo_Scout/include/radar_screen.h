@@ -22,18 +22,16 @@ struct Blip {
   int sx, sy;
   bool active;
 };
-bool isBlipActive(int slot);
-
 void drawDashboardFrame();
 void updateDashboard(float distMM, float angleDeg, float speedCms, bool present);
 void resetDashboard();
 
 void updateBlip(int slot, int sx, int sy, bool present);
 
-int getZone(float angleDeg);
 void drawFarZone(int zone, bool on);
 void clearAllFarZones();
 
 void drawRadarBase();
+void tickRadar();
 
 #endif

@@ -2,7 +2,6 @@
 #define BATTERY_SCREEN_H
 
 #include <cstdint>
-#include "config.h"
 #include "display.h"
 
 namespace BatteryScreen {

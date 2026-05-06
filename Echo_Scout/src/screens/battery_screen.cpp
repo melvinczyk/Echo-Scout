@@ -1,5 +1,4 @@
 #include "battery_screen.h"
-#include "radar_screen.h"
 #include "display.h"
 
 
@@ -154,13 +153,7 @@ void drawBatteryBase() {
     _usbState    = false;
     prevUsbState = true;
 
-    // Header
-    Display::tft.drawFastHLine(0, Display::HEADER_H - 1, Display::SCREEN_W, Display::Colors::SEP);
-    Display::tft.drawRoundRect(3, 3, 64, Display::HEADER_H - 6, 3, Display::Colors::GREEN_DIM);
-    Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("< MENU", 35, 7, 2);
-    Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-    Display::tft.drawCentreString("BATTERY", 120, 9, 2);
+    Display::drawHeader("BATTERY");
 
     // Static labels and separators
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
@@ -168,7 +161,6 @@ void drawBatteryBase() {
     drawBatteryShell();
     Display::tft.drawFastHLine(10, BatteryScreen::SEP_Y, Display::SCREEN_W - 20, Display::Colors::SEP);
 
-    // Prime ADC buffer with real readings
     pinMode(Config::BAT_ADC_PIN, INPUT);
     for (int i = 0; i < SMOOTH_N; i++) sampleVoltage();
 

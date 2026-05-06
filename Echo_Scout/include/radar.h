@@ -19,4 +19,6 @@ void clearTargetSmoothing(int slot);
 void radarResetState();
 void radarProcessSerial();
 
+int radarGetZone(float angleDeg);
+
 #endif

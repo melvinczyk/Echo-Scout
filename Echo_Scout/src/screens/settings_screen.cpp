@@ -1,13 +1,10 @@
 #include "settings_screen.h"
-#include "menu_screen.h"
-#include "app_state.h"
+#include "screen_manager.h"
 #include "display.h"
+#include "touch.h"
 
 
 int settingsScrollY = 0;
-int touchStartY = 0;
-int touchStartScroll = 0;
-bool touchMoved = false;
 
 
 static const char *htLabel(uint8_t i) {
@@ -28,6 +25,7 @@ static const char *mvLabel(uint8_t i) { return moveThreshLabels[i]; }
 static const char *smLabel(uint8_t i) { return i ? "ON" : "OFF"; }
 static const char *secLabel(uint8_t i) { return ""; }
 static const char *blLabel(uint8_t i)  { return blLabels[i]; }
+static const char *slLabel(uint8_t i)  { return sleepTimeoutLabels[i]; }
 
 
 SRow settingRows[NUM_SETTING_ROWS] = {
@@ -53,6 +51,9 @@ SRow settingRows[NUM_SETTING_ROWS] = {
     {"-- DISPLAY --", "", nullptr, 0, secLabel, true},
     {"BACKLIGHT", "screen brightness", &cfg.brightnessIdx, NUM_BL,
      blLabel, false},
+    {"-- POWER --", "", nullptr, 0, secLabel, true},
+    {"SLEEP", "auto sleep when idle", &cfg.sleepTimeoutIdx, NUM_SLEEP,
+     slLabel, false},
 };
 
 
@@ -145,8 +146,7 @@ void drawSettingsScreen() {
 void handleSettingsTouch(int tx, int ty) {
   if (inRect(tx, ty, 3, 3, 58, Display::HEADER_H - 6)) {
     applySettings();
-    AppState::currentScreen = Display::Screen::MENU;
-    startMenu();
+    ScreenManager::switchScreen(Display::Screen::MENU);
     return;
   }
   int ry = Display::SCREEN_H - SET_RESET_H + 5;
@@ -157,8 +157,6 @@ void handleSettingsTouch(int tx, int ty) {
     drawSettingsScreen();
     return;
   }
-  if (touchMoved)
-    return;
 
   for (int i = 0; i < NUM_SETTING_ROWS; i++) {
     if (settingRows[i].isSectionHeader)

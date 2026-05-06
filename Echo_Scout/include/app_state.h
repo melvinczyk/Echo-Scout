@@ -4,7 +4,6 @@
 #include "display.h"
 
 namespace AppState {
-    inline int currentScreen = Display::Screen::MENU;
+    inline Display::Screen currentScreen = Display::Screen::MENU;
 }
-
 #endif

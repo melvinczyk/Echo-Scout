@@ -3,6 +3,7 @@
 
 GridPx gridPx[MAX_RING_PX];
 int gridPxCount = 0;
+SpokeEndpoint spokePts[5];
 
 float scaleDist(float distMM) {
   float ratio = constrain(distMM / cfgAccRange(), 0.0f, 1.0f);
@@ -34,10 +35,24 @@ void radarToScreenAngle(float distMM, float azDeg, int& sx, int& sy) {
 }
 
 void buildGridTable() {
+  if (!gridDirty) return;
+  gridDirty = false;
+
   gridPxCount = 0;
   float accRange = cfgAccRange();
   float halfDeg = cfgMaxAngle();
   float spokes[] = {-halfDeg, -halfDeg / 2, 0, halfDeg / 2, halfDeg};
+
+  for (int s = 0; s < 5; s++) {
+    float rad = spokes[s] * PI / 180.0f;
+    uint16_t col = (s == 0 || s == 4) ? Display::Colors::GREEN_DIM : Display::Colors::GREEN_FAINT;
+    spokePts[s] = {
+      (int16_t)(RadarScreen::APEX_X + (int)(CONE_LEN * sinf(rad))),
+      (int16_t)(RadarScreen::APEX_Y - (int)(CONE_LEN * cosf(rad))),
+      spokes[s],
+      col
+    };
+  }
 
   for (float rMM = 1000.0f; rMM < accRange; rMM += 1000.0f) {
     if (gridPxCount >= MAX_RING_PX - 120)
@@ -116,21 +131,16 @@ void buildGridTable() {
 void repairGrid(int cx, int cy, int radius) {
   float accRange = cfgAccRange();
   float halfDeg = cfgMaxAngle();
-  float spokes[] = {-halfDeg, -halfDeg / 2, 0, halfDeg / 2, halfDeg};
 
   for (int s = 0; s < 5; s++) {
-    float rad = spokes[s] * PI / 180.0f;
-    int ex = RadarScreen::APEX_X + (int)(1.0f * CONE_LEN * sinf(rad));
-    int ey = RadarScreen::APEX_Y - (int)(1.0f * CONE_LEN * cosf(rad));
-    float dx = ex - RadarScreen::APEX_X;
-    float dy = ey - RadarScreen::APEX_Y;
+    float dx = spokePts[s].ex - RadarScreen::APEX_X;
+    float dy = spokePts[s].ey - RadarScreen::APEX_Y;
     float len = sqrtf(dx * dx + dy * dy);
     float cross =
         fabsf((cx - RadarScreen::APEX_X) * dy - (cy - RadarScreen::APEX_Y) * dx) / len;
     if (cross <= radius + 4) {
-      uint16_t col =
-          (s == 0 || s == 4) ? Display::Colors::GREEN_DIM : Display::Colors::GREEN_FAINT;
-      Display::tft.drawLine(RadarScreen::APEX_X, RadarScreen::APEX_Y, ex, ey, col);
+      Display::tft.drawLine(RadarScreen::APEX_X, RadarScreen::APEX_Y,
+                            spokePts[s].ex, spokePts[s].ey, spokePts[s].col);
     }
   }
 
@@ -179,19 +189,13 @@ void repairGrid(int cx, int cy, int radius) {
 
 void drawConeGrid() {
   float accRange = cfgAccRange();
-  float halfDeg = cfgMaxAngle();
-  float spokes[] = {-halfDeg, -halfDeg / 2, 0, halfDeg / 2, halfDeg};
 
   for (int i = 0; i < gridPxCount; i++)
     Display::tft.drawPixel(gridPx[i].x, gridPx[i].y, gridPx[i].col);
 
   for (int s = 0; s < 5; s++) {
-    float rad = spokes[s] * PI / 180.0f;
-    int ex = RadarScreen::APEX_X + (int)(1.0f * CONE_LEN * sinf(rad));
-    int ey = RadarScreen::APEX_Y - (int)(1.0f * CONE_LEN * cosf(rad));
-    uint16_t col =
-        (s == 0 || s == 4) ? Display::Colors::GREEN_DIM : Display::Colors::GREEN_FAINT;
-    Display::tft.drawLine(RadarScreen::APEX_X, RadarScreen::APEX_Y, ex, ey, col);
+    Display::tft.drawLine(RadarScreen::APEX_X, RadarScreen::APEX_Y,
+                          spokePts[s].ex, spokePts[s].ey, spokePts[s].col);
   }
 
   
@@ -222,13 +226,10 @@ void drawConeGrid() {
   }
   // Angle labels
   for (int i = 0; i < 5; i++) {
-    float rad = spokes[i] * PI / 180.0f;
-    int lx = RadarScreen::APEX_X + (int)(1.0f * CONE_LEN * sinf(rad));
-    int ly = RadarScreen::APEX_Y - (int)(1.0f * CONE_LEN * cosf(rad));
-    lx = constrain(lx, 4, 230);
-    ly = constrain(ly, CONE_TOP + 2, RadarScreen::APEX_Y - 8);
+    int lx = constrain((int)spokePts[i].ex, 4, 230);
+    int ly = constrain((int)spokePts[i].ey, CONE_TOP + 2, RadarScreen::APEX_Y - 8);
     char lbl[8];
-    sprintf(lbl, "%+.0f", spokes[i]);
+    sprintf(lbl, "%+.0f", spokePts[i].angleDeg);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawCentreString(lbl, lx, ly, 1);
   }

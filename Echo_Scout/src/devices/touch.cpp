@@ -1,4 +1,6 @@
 #include "touch.h"
+#include <Arduino.h>
+#include <Wire.h>
 
 
 void touchInit() {

@@ -1,6 +1,7 @@
 #include <math.h>
 #include "imu_screen.h"
 #include "imu.h"
+#include "display.h"
 #include "device_state.h"
 
 
@@ -125,14 +126,7 @@ void drawImuBase() {
   prevPitch = -9999;
   prevYaw = -9999;
 
-  // Header
-  Display::tft.fillRect(0, 0, Display::SCREEN_W, Display::HEADER_H, Display::Colors::BG);
-  Display::tft.drawFastHLine(0, Display::HEADER_H - 1, Display::SCREEN_W, Display::Colors::SEP);
-  Display::tft.drawRoundRect(3, 3, 64, Display::HEADER_H - 6, 3, Display::Colors::GREEN_DIM);
-  Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-  Display::tft.drawCentreString("< MENU", 35, 7, 2);
-  Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-  Display::tft.drawCentreString("IMU", 120, 9, 2);
+  Display::drawHeader("IMU");
 
   if (!ImuState::ready) {
     Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);

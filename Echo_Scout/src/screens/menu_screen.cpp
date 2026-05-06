@@ -44,11 +44,6 @@ static const Display::Button menuButtons[] = {
     },
     // Row 2 — IMU feature screens
     {
-        MenuScreen::HORIZON_X, MenuScreen::HORIZON_Y,
-        MenuScreen::HORIZON_W, MenuScreen::HORIZON_H, 1, "HORIZON",
-        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
-    },
-    {
         MenuScreen::SPIRIT_X, MenuScreen::SPIRIT_Y,
         MenuScreen::SPIRIT_W, MenuScreen::SPIRIT_H, 1, "SPIRIT",
         Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM

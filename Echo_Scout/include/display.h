@@ -32,7 +32,6 @@ namespace Display {
         IMU,
         BATTERY,
         POWER_CONFIRM,
-        HORIZON,
         SPIRIT
     };
 
@@ -62,10 +61,6 @@ namespace Display {
     void drawHeader(const char* title);
     void drawErrorScreen(const char* text);
     void drawAsciiArt(const AsciiArt& art, Colors col);
-}
-
-inline bool inRect(int tx, int ty, int rx, int ry, int rw, int rh) {
-    return tx >= rx && tx <= rx + rw && ty >= ry && ty <= ry + rh;
 }
 
 #endif

@@ -1,13 +1,12 @@
 #include <math.h>
 #include "radar_screen.h"
-#include "app_state.h"
+#include "radar.h"
 #include "device_state.h"
+#include "grid.h"
 
 
 static Blip blips[3] = {{0, 0, false}, {0, 0, false}, {0, 0, false}};
 static bool farZoneDrawn[4] = {false, false, false, false};
-
-bool isBlipActive(int slot) { return blips[slot].active; }
 
 static float prevDashDist = -9999;
 static float prevDashAngle = -9999;
@@ -117,13 +116,6 @@ void updateBlip(int slot, int sx, int sy, bool present) {
 }
 
 
-int getZone(float angleDeg) {
-  if (angleDeg < -20.0f) return 0;
-  if (angleDeg <   0.0f) return 1;
-  if (angleDeg <  20.0f) return 2;
-  return 3;
-}
-
 void drawFarZone(int zone, bool on) {
   if (farZoneDrawn[zone] == on) return;
   farZoneDrawn[zone] = on;
@@ -185,7 +177,37 @@ void drawRadarBase() {
   buildGridTable();
 
   drawConeGrid();
-  Display::drawHeader("ECHO SCOUT");  // redrawn after grid to cover any bleed
+  Display::drawHeader("ECHO SCOUT");
   drawDashboardFrame();
   updateDashboard(0, 0, 0, false);
+}
+
+void tickRadar() {
+  radarProcessSerial();
+
+  static bool wasReady = false;
+  if (RadarState::ready && !wasReady) {
+    wasReady = true;
+    drawRadarBase();
+  }
+  if (!RadarState::newFrame) return;
+  RadarState::newFrame = false;
+
+  for (int i = 0; i < 3; i++) {
+    if (RadarState::slotActive[i]) {
+      int sx, sy;
+      radarToScreen(RadarState::slotX[i], RadarState::slotY[i], sx, sy);
+      if (sy >= CONE_TOP && sy < Display::SCREEN_H)
+        updateBlip(i, sx, sy, true);
+      else
+        updateBlip(i, 0, 0, false);
+    } else {
+      updateBlip(i, 0, 0, false);
+    }
+  }
+
+  for (int z = 0; z < 4; z++)
+    drawFarZone(z, RadarState::farZone[z]);
+
+  updateDashboard(RadarState::distance, RadarState::azimuth, RadarState::speed, RadarState::present);
 }
