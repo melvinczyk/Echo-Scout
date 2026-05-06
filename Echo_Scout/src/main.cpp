@@ -8,7 +8,6 @@
 #include "imu_screen.h"
 #include "horizon_screen.h"
 #include "spirit_screen.h"
-#include "compass_screen.h"
 #include "touch.h"
 #include "imu.h"
 #include "battery_screen.h"
@@ -49,8 +48,6 @@ static void tickScreens() {
     tickHorizon();
   if (AppState::currentScreen == Display::Screen::SPIRIT)
     tickSpirit();
-  if (AppState::currentScreen == Display::Screen::COMPASS)
-    tickCompass();
 }
 
 static void handleTouch() {
@@ -116,14 +113,16 @@ static void handleTouch() {
                                    MenuScreen::SPIRIT_W, MenuScreen::SPIRIT_H)) {
           AppState::currentScreen = Display::Screen::SPIRIT;
           drawSpiritBase();
-        } else if (inRect(tx, ty, MenuScreen::COMPASS_X, MenuScreen::COMPASS_Y,
-                                   MenuScreen::COMPASS_W, MenuScreen::COMPASS_H)) {
-          AppState::currentScreen = Display::Screen::COMPASS;
-          drawCompassBase();
         } else if (inRect(tx, ty, MenuScreen::POWER_X, MenuScreen::POWER_Y,
                                    MenuScreen::POWER_W, MenuScreen::POWER_H)) {
           AppState::currentScreen = Display::Screen::POWER_CONFIRM;
           drawPowerConfirm();
+        }
+      } else if (AppState::currentScreen == Display::Screen::SPIRIT) {
+        handleSpiritTouch(tx, ty);
+        if (inRect(tx, ty, 3, 3, 64, Display::HEADER_H - 6)) {
+          AppState::currentScreen = Display::Screen::MENU;
+          startMenu();
         }
       } else {
         if (inRect(tx, ty, 3, 3, 64, Display::HEADER_H - 6)) {

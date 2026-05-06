@@ -91,14 +91,68 @@ static void drawBall(int bsx, int bsy, bool isLevel) {
     Display::tft.drawCircle(bsx, bsy, BALL_RADIUS, Display::Colors::BG);
 }
 
+// ── calibrate button ──────────────────────────────────────────────────────────
+// Shown in the top-right header area. Active (green) only when ball is centred.
+// x=162..237, y=4..22
+
+static bool  spiritLevel  = false;  // current level state (used by touch handler)
+static bool  calFlash     = false;  // show "CAL OK" briefly after calibration
+static unsigned long calFlashMs = 0;
+
+static void drawCalButton(bool isLevel) {
+    const int BX = 162, BY = 4, BW = 76, BH = 18;
+
+    // If cal flash is active, show CAL OK for 1.5 s then clear
+    if (calFlash) {
+        if (millis() - calFlashMs < 1500) {
+            Display::tft.fillRect(BX, BY, BW, BH, Display::Colors::BG);
+            Display::tft.drawRect(BX, BY, BW, BH, Display::Colors::GREEN);
+            Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+            Display::tft.drawCentreString("CAL OK", BX + BW/2, BY + 5, 1);
+            return;
+        }
+        calFlash = false;
+    }
+
+    Display::tft.fillRect(BX, BY, BW, BH, Display::Colors::BG);
+    if (isLevel) {
+        Display::tft.drawRect(BX, BY, BW, BH, Display::Colors::GREEN);
+        Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+        Display::tft.drawCentreString("CALIBRATE", BX + BW/2, BY + 5, 1);
+    } else {
+        Display::tft.drawRect(BX, BY, BW, BH, Display::Colors::GREEN_DIM);
+        Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+        Display::tft.drawCentreString("CALIBRATE", BX + BW/2, BY + 5, 1);
+    }
+}
+
+void handleSpiritTouch(int tx, int ty) {
+    // Only calibrate if ball is centred (level) and touch is in button area
+    if (!spiritLevel) return;
+    if (tx < 162 || tx > 238 || ty < 4 || ty > 22) return;
+
+    // Capture the raw (pre-calibration) quaternion as the new reference
+    ImuState::calR = ImuState::rawQR;
+    ImuState::calI = ImuState::rawQI;
+    ImuState::calJ = ImuState::rawQJ;
+    ImuState::calK = ImuState::rawQK;
+    ImuState::calibrated = true;
+
+    calFlash   = true;
+    calFlashMs = millis();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // ── readout ───────────────────────────────────────────────────────────────────
 static float prevRollS = -9999, prevPitchS = -9999;
+static bool  prevLevelS = false;
 
 static void drawReadout(float roll, float pitch, bool isLevel) {
     bool changed = fabsf(roll  - prevRollS)  > 0.3f ||
-                   fabsf(pitch - prevPitchS) > 0.3f;
+                   fabsf(pitch - prevPitchS) > 0.3f ||
+                   isLevel != prevLevelS || calFlash;
     if (!changed) return;
-    prevRollS = roll; prevPitchS = pitch;
+    prevRollS = roll; prevPitchS = pitch; prevLevelS = isLevel;
 
     int y = SpiritScreen::DASH_Y;
     int cardW = 112, pad = 4, valY = y + 18;
@@ -113,13 +167,7 @@ static void drawReadout(float roll, float pitch, bool isLevel) {
     Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
     Display::tft.drawCentreString(buf, pad + cardW + pad + cardW/2, valY, 2);
 
-    // LEVEL indicator on right side of header area
-    Display::tft.fillRect(168, 6, 64, 16, Display::Colors::BG);
-    if (isLevel) {
-        Display::tft.drawRect(168, 6, 64, 16, Display::Colors::GREEN);
-        Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-        Display::tft.drawCentreString("LEVEL", 200, 9, 1);
-    }
+    drawCalButton(isLevel);
 }
 
 // ── public API ────────────────────────────────────────────────────────────────
@@ -129,17 +177,19 @@ void drawSpiritBase() {
     bx = 0.0f; by = 0.0f;
     vx = 0.0f; vy = 0.0f;
     ballDrawn = false;
-    prevRollS = -9999; prevPitchS = -9999;
+    prevRollS = -9999; prevPitchS = -9999; prevLevelS = false;
+    calFlash  = false; spiritLevel = false;
 
     Display::drawHeader("SPIRIT");
+    drawCalButton(false);
 
     Display::tft.drawFastHLine(0, SpiritScreen::DASH_Y, Display::SCREEN_W, Display::Colors::SEP);
     int cardW = 112, pad = 4, y = SpiritScreen::DASH_Y;
     Display::tft.drawRect(pad,               y + 2, cardW, 52, Display::Colors::GREEN_DIM);
     Display::tft.drawRect(pad + cardW + pad, y + 2, cardW, 52, Display::Colors::GREEN_DIM);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("ROLL",  pad + cardW/2,               y + 5, 1);
-    Display::tft.drawCentreString("PITCH", pad + cardW + pad + cardW/2, y + 5, 1);
+    Display::tft.drawCentreString("X-TILT", pad + cardW/2,               y + 5, 1);
+    Display::tft.drawCentreString("Y-TILT", pad + cardW + pad + cardW/2, y + 5, 1);
 
     if (!ImuState::ready) {
         Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
@@ -159,17 +209,20 @@ void tickSpirit() {
     float qI = ImuState::qI, qJ = ImuState::qJ,
           qK = ImuState::qK, qR = ImuState::qR;
 
-    float sinr = 2.0f*(qR*qI + qJ*qK);
-    float cosr = 1.0f - 2.0f*(qI*qI + qJ*qJ);
-    float roll  = atan2f(sinr, cosr) * 180.0f / 3.14159f;
+    // Extract where "down" (calibration reference direction = body J when horizontal)
+    // lands in the current corrected frame.  This avoids Euler singularities and
+    // works directly in any orientation.
+    // Row J of R(q): world-J column projected into body frame = body tilt components.
+    // gI = tilt left/right, gK = tilt forward/back (range ±1).
+    float gI =  2.0f*(qI*qJ - qR*qK);   // left/right tilt → ball X
+    float gK =  2.0f*(qJ*qK + qR*qI);   // fwd/back tilt   → ball Y
 
-    float sinp = 2.0f*(qR*qJ - qK*qI);
-    float pitch = (fabsf(sinp) >= 1.0f) ? copysignf(90.0f, sinp)
-                                         : asinf(sinp) * 180.0f / 3.14159f;
+    float tiltX = asinf(constrain(gI, -1.0f, 1.0f)) * 180.0f / 3.14159f;
+    float tiltY = asinf(constrain(gK, -1.0f, 1.0f)) * 180.0f / 3.14159f;
 
     // Target position from tilt
-    float tx = constrain( roll  * TILT_SCALE, -MAX_DISP, MAX_DISP);
-    float ty = constrain(-pitch * TILT_SCALE, -MAX_DISP, MAX_DISP);
+    float tx = constrain(gI * MAX_DISP, -MAX_DISP, MAX_DISP);
+    float ty = constrain(gK * MAX_DISP, -MAX_DISP, MAX_DISP);
 
     // Clamp target inside bowl radius
     float tdist = sqrtf(tx*tx + ty*ty);
@@ -195,8 +248,9 @@ void tickSpirit() {
     prevBx = newBx; prevBy = newBy;
 
     bool isLevel = (dist < (float)DEAD_ZONE);
+    spiritLevel = isLevel;
     drawBall(newBx, newBy, isLevel);
     ballDrawn = true;
 
-    drawReadout(roll, pitch, isLevel);
+    drawReadout(tiltX, tiltY, isLevel);
 }

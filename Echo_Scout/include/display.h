@@ -33,8 +33,7 @@ namespace Display {
         BATTERY,
         POWER_CONFIRM,
         HORIZON,
-        SPIRIT,
-        COMPASS
+        SPIRIT
     };
 
     struct Button {

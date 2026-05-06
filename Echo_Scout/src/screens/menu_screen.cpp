@@ -53,11 +53,6 @@ static const Display::Button menuButtons[] = {
         MenuScreen::SPIRIT_W, MenuScreen::SPIRIT_H, 1, "SPIRIT",
         Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
     },
-    {
-        MenuScreen::COMPASS_X, MenuScreen::COMPASS_Y,
-        MenuScreen::COMPASS_W, MenuScreen::COMPASS_H, 1, "COMPASS",
-        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
-    },
 };
 
 static const char* scoutLines[] = {
@@ -194,7 +189,7 @@ void drawLaunchButton(bool highlight) {
 void drawPowerButton() {
   constexpr int bx = MenuScreen::POWER_X, by = MenuScreen::POWER_Y,
                 bw = MenuScreen::POWER_W, bh = MenuScreen::POWER_H;
-  Display::tft.fillRect(0, 249, Display::SCREEN_W, 67, Display::Colors::BG);
+  Display::tft.fillRect(0, 280, Display::SCREEN_W, 36, Display::Colors::BG);
   Display::tft.drawRect(bx, by, bw, bh, Display::Colors::RED);
   Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
   Display::tft.drawCentreString("[ POWER OFF ]", 120, by+4, 1);

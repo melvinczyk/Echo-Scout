@@ -171,9 +171,9 @@ void clearAllFarZones() {
 
 void drawRadarBase() {
   Display::tft.fillScreen(Display::Colors::BG);
-  Display::drawHeader("ECHO SCOUT");
 
   if (!RadarState::found) {
+    Display::drawHeader("ECHO SCOUT");
     Display::drawErrorScreen("RADAR NOT FOUND");
     return;
   }
@@ -185,6 +185,7 @@ void drawRadarBase() {
   buildGridTable();
 
   drawConeGrid();
+  Display::drawHeader("ECHO SCOUT");  // redrawn after grid to cover any bleed
   drawDashboardFrame();
   updateDashboard(0, 0, 0, false);
 }

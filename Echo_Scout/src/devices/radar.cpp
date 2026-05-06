@@ -79,11 +79,8 @@ void applyPersistence(RawTarget targets[3]) {
 
 bool smoothTarget(int slot, bool wasTracked, float rawX, float rawY,
                   float& outX, float& outY) {
-  float dx = rawX - lastBlipX[slot];
-  float dy = rawY - lastBlipY[slot];
-  if (sqrtf(dx * dx + dy * dy) >= 180.0f && wasTracked)
-    return false;
-
+  // Apply smoothing first so the jump check operates on the smoothed delta,
+  // not raw-vs-lastBlip (which inflates with smoothing lag and falsely triggers).
   if (cfgSmoothing() && wasTracked) {
     smoothedX[slot] = SMOOTH_ALPHA * rawX + (1.0f - SMOOTH_ALPHA) * smoothedX[slot];
     smoothedY[slot] = SMOOTH_ALPHA * rawY + (1.0f - SMOOTH_ALPHA) * smoothedY[slot];
@@ -92,9 +89,12 @@ bool smoothTarget(int slot, bool wasTracked, float rawX, float rawY,
     smoothedY[slot] = rawY;
   }
 
-  float mdx = smoothedX[slot] - lastBlipX[slot];
-  float mdy = smoothedY[slot] - lastBlipY[slot];
-  if (sqrtf(mdx * mdx + mdy * mdy) > cfgMoveThresh() || !wasTracked) {
+  float dx = smoothedX[slot] - lastBlipX[slot];
+  float dy = smoothedY[slot] - lastBlipY[slot];
+  if (sqrtf(dx * dx + dy * dy) >= 180.0f && wasTracked)
+    return false;
+
+  if (sqrtf(dx * dx + dy * dy) > cfgMoveThresh() || !wasTracked) {
     lastBlipX[slot] = smoothedX[slot];
     lastBlipY[slot] = smoothedY[slot];
     outX = smoothedX[slot];

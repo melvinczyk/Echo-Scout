@@ -54,6 +54,21 @@ bool imuUpdate() {
     float ci, cj, ck, cr;
     frameCorrectValues(rawI, rawJ, rawK, rawR, ci, cj, ck, cr);
 
+    // Store raw (pre-calibration) values so the calibration routine can read them
+    ImuState::rawQI = ci; ImuState::rawQJ = cj;
+    ImuState::rawQK = ck; ImuState::rawQR = cr;
+
+    // Apply calibration offset: q_out = conj(q_cal) * q_raw
+    if (ImuState::calibrated) {
+        float aR =  ImuState::calR, aI = -ImuState::calI;
+        float aJ = -ImuState::calJ, aK = -ImuState::calK;
+        float bR = cr, bI = ci, bJ = cj, bK = ck;
+        cr = aR*bR - aI*bI - aJ*bJ - aK*bK;
+        ci = aR*bI + aI*bR + aJ*bK - aK*bJ;
+        cj = aR*bJ - aI*bK + aJ*bR + aK*bI;
+        ck = aR*bK + aI*bJ - aJ*bI + aK*bR;
+    }
+
     if (fabsf(ci - ImuState::qI) < 0.005f && fabsf(cj - ImuState::qJ) < 0.005f &&
         fabsf(ck - ImuState::qK) < 0.005f && fabsf(cr - ImuState::qR) < 0.005f)
         return false;

@@ -12,7 +12,6 @@ namespace MenuScreen {
     // Row 2: IMU feature buttons
     constexpr int HORIZON_X  =  8,  HORIZON_Y  = 246, HORIZON_W  = 72, HORIZON_H   = 26;
     constexpr int SPIRIT_X   = 84,  SPIRIT_Y   = 246, SPIRIT_W   = 72, SPIRIT_H    = 26;
-    constexpr int COMPASS_X  = 160, COMPASS_Y  = 246, COMPASS_W  = 72, COMPASS_H   = 26;
     // Power
     constexpr int POWER_X = 40,  POWER_Y = 295, POWER_W = 160, POWER_H = 18;
 }

@@ -243,18 +243,23 @@ void tickHorizon() {
     float qI = ImuState::qI, qJ = ImuState::qJ,
           qK = ImuState::qK, qR = ImuState::qR;
 
-    // Roll
-    float sinr = 2.0f * (qR*qI + qJ*qK);
-    float cosr = 1.0f - 2.0f*(qI*qI + qJ*qJ);
-    float roll  = atan2f(sinr, cosr) * 180.0f / 3.14159f;
+    // With our frame (I=right, J=boresight/forward, K=up):
+    // Bank (horizon tilt) = rotation around J (forward) = "pitch" in ZYX convention
+    // Nose-up pitch       = rotation around I (right)   = "roll" in ZYX convention
+    float sinBank = 2.0f*(qR*qJ - qK*qI);
+    float bank = (fabsf(sinBank) >= 1.0f) ? copysignf(90.0f, sinBank)
+                                           : asinf(sinBank) * 180.0f / 3.14159f;
 
-    // Pitch
-    float sinp = 2.0f*(qR*qJ - qK*qI);
-    float pitch = (fabsf(sinp) >= 1.0f) ? copysignf(90.0f, sinp)
-                                         : asinf(sinp) * 180.0f / 3.14159f;
+    float sinNose = 2.0f*(qR*qI + qJ*qK);
+    float cosNose = 1.0f - 2.0f*(qI*qI + qJ*qJ);
+    float nose  = atan2f(sinNose, cosNose) * 180.0f / 3.14159f;
 
-    float rollRad  = -roll  * 3.14159f / 180.0f;
-    int   pitchPx  = (int)(pitch * 3.0f);
+    // Use bank for horizon line tilt, nose for vertical displacement
+    float roll  = bank;
+    float pitch = nose;
+
+    float rollRad  = -bank * 3.14159f / 180.0f;
+    int   pitchPx  = (int)(nose * 3.0f);
     pitchPx = constrain(pitchPx, -(RADIUS - 10), RADIUS - 10);
 
     // Full redraw of the disk each tick (fast on TFT_eSPI)
