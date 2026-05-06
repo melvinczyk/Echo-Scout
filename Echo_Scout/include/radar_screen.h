@@ -35,5 +35,6 @@ void drawFarZone(int zone, bool on);
 void clearAllFarZones();
 
 void drawRadarBase();
+void updateTiltIndicator(float elevDeg);
 
 #endif

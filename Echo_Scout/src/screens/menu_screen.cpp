@@ -28,38 +28,36 @@ static MenuState menuState = {
 
 static const Display::Button menuButtons[] = {
     {
-        MenuScreen::SETTINGS_X,
-        MenuScreen::SETTINGS_Y,
-        MenuScreen::SETTINGS_W,
-        MenuScreen::SETTINGS_BH,
-        1,
-        "SETTINGS",
-        Display::Colors::GREEN_DIM,
-        Display::Colors::GREEN_FAINT,
-        Display::Colors::GREEN_DIM
+        MenuScreen::SETTINGS_X, MenuScreen::SETTINGS_Y,
+        MenuScreen::SETTINGS_W, MenuScreen::SETTINGS_BH, 1, "SETTINGS",
+        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
     },
     {
-        MenuScreen::IMU_X,
-        MenuScreen::IMU_Y,
-        MenuScreen::IMU_W,
-        MenuScreen::IMU_BH,
-        1,
-        "IMU",
-        Display::Colors::GREEN_DIM,
-        Display::Colors::GREEN_FAINT,
-        Display::Colors::GREEN_DIM
+        MenuScreen::IMU_X, MenuScreen::IMU_Y,
+        MenuScreen::IMU_W, MenuScreen::IMU_BH, 1, "IMU",
+        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
     },
     {
-        MenuScreen::BATTERY_X,
-        MenuScreen::BATTERY_Y,
-        MenuScreen::BATTERY_W,
-        MenuScreen::BATTERY_H,
-        1,
-        "BATTERY",
-        Display::Colors::GREEN_DIM,
-        Display::Colors::GREEN_FAINT,
-        Display::Colors::GREEN_DIM
-    }
+        MenuScreen::BATTERY_X, MenuScreen::BATTERY_Y,
+        MenuScreen::BATTERY_W, MenuScreen::BATTERY_H, 1, "BATTERY",
+        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
+    },
+    // Row 2 — IMU feature screens
+    {
+        MenuScreen::HORIZON_X, MenuScreen::HORIZON_Y,
+        MenuScreen::HORIZON_W, MenuScreen::HORIZON_H, 1, "HORIZON",
+        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
+    },
+    {
+        MenuScreen::SPIRIT_X, MenuScreen::SPIRIT_Y,
+        MenuScreen::SPIRIT_W, MenuScreen::SPIRIT_H, 1, "SPIRIT",
+        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
+    },
+    {
+        MenuScreen::COMPASS_X, MenuScreen::COMPASS_Y,
+        MenuScreen::COMPASS_W, MenuScreen::COMPASS_H, 1, "COMPASS",
+        Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM
+    },
 };
 
 static const char* scoutLines[] = {
@@ -223,10 +221,11 @@ void startMenu() {
   Display::drawAsciiArt(scout, Display::Colors::GREEN_FAINT);
   drawStatusBar();
 
-  // Corners
-  Display::tft.drawFastHLine(8, 161, 224, Display::Colors::SEP);
-  Display::tft.drawFastHLine(8, 215, 224, Display::Colors::SEP);
-  Display::tft.drawFastHLine(8, 249, 224, Display::Colors::SEP);
+  // Separators between button rows and power
+  Display::tft.drawFastHLine(8, 158, 224, Display::Colors::SEP);
+  Display::tft.drawFastHLine(8, 212, 224, Display::Colors::SEP);
+  Display::tft.drawFastHLine(8, 244, 224, Display::Colors::SEP);
+  Display::tft.drawFastHLine(8, 279, 224, Display::Colors::SEP);
   Display::tft.drawFastHLine(8, 291, 224, Display::Colors::SEP);
 
   // Buttons

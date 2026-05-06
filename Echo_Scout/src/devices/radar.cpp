@@ -4,6 +4,7 @@
 #include "device_state.h"
 #include "app_state.h"
 #include "radar_screen.h"
+#include "imu.h"
 
 static float smoothedX[3]  = {0, 0, 0};
 static float smoothedY[3]  = {0, 0, 0};
@@ -43,8 +44,11 @@ RawTarget parseTarget(const uint8_t* b) {
   t.x = -t.x;
   if (t.present && t.y <= 0)
     t.present = false;
-  if (t.present && t.y < cfgMinRange())
-    t.present = false;
+  if (t.present) {
+    float d = sqrtf((float)t.x*(float)t.x + (float)t.y*(float)t.y);
+    if (d < (float)cfgMinRange())
+      t.present = false;
+  }
   if (t.present && t.y > 8000.0f)
     t.present = false;
   if (t.present) {
@@ -125,6 +129,53 @@ void radarResetState() {
 }
 
 
+// ── IMU tilt correction ───────────────────────────────────────────────────────
+// The radar reports (x, y) in its tilted scan plane. We rotate the target
+// into the world horizontal frame, giving corrected horizontal range and
+// horizontal azimuth relative to the device boresight.
+//
+// Body frame after frameCorrectValues: I=right, J=forward/boresight, K=up.
+// Quaternion (qR,qI,qJ,qK) rotates world→body, so R^T rotates body→world.
+static void applyImuCorrection(RawTarget& t) {
+    if (!ImuState::ready || !t.present) return;
+
+    float qR = ImuState::qR, qI = ImuState::qI;
+    float qJ = ImuState::qJ, qK = ImuState::qK;
+
+    // Target in body frame: (vI=right, vJ=forward, vK=0 — radar has no elevation)
+    float vI = (float)t.x, vJ = (float)t.y;
+
+    // Rotate body→world  (R^T * v, dropping vK=0 terms)
+    float wX = (1.0f - 2.0f*(qJ*qJ + qK*qK))*vI  +  2.0f*(qI*qJ + qR*qK)*vJ;
+    float wY =  2.0f*(qI*qJ - qR*qK)*vI            +  (1.0f - 2.0f*(qI*qI + qK*qK))*vJ;
+
+    // Horizontal ground-plane range
+    float hRange = sqrtf(wX*wX + wY*wY);
+    if (hRange < 1.0f) return;
+
+    // Device boresight heading in the world horizontal plane
+    float heading = atan2f(2.0f*(qR*qK + qI*qJ),
+                           1.0f - 2.0f*(qJ*qJ + qK*qK));
+
+    // Target azimuth relative to device boresight (world horizontal)
+    float devAz = atan2f(wX, wY) - heading;
+
+    t.x = (int16_t)roundf(hRange * sinf(devAz));
+    t.y = (int16_t)roundf(hRange * cosf(devAz));
+}
+
+// Returns the elevation angle (degrees) of the radar boresight above horizontal.
+// Positive = pointing up, negative = pointing down.
+static float computeElevationDeg() {
+    if (!ImuState::ready) return 0.0f;
+    float qR = ImuState::qR, qI = ImuState::qI;
+    float qJ = ImuState::qJ, qK = ImuState::qK;
+    // World-Z component of the body-J (boresight) axis
+    float jZ = 2.0f*(qJ*qK - qR*qI);
+    return asinf(constrain(jZ, -1.0f, 1.0f)) * 180.0f / PI;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 static uint8_t frameBuf[30];
 static size_t  frameIdx   = 0;
 static uint8_t frameState = 0;
@@ -163,13 +214,21 @@ void radarProcessSerial() {
               drawRadarBase();
             }
           }
+          imuUpdate();
+
           RawTarget t[3];
           t[0] = parseTarget(frameBuf + 0);
           t[1] = parseTarget(frameBuf + 8);
           t[2] = parseTarget(frameBuf + 16);
           applyPersistence(t);
 
+          // Rotate each target from the tilted device frame into the world
+          // horizontal plane, correcting for device pitch and roll.
+          for (int i = 0; i < 3; i++)
+              applyImuCorrection(t[i]);
+
           if (AppState::currentScreen == Display::Screen::RADAR) {
+              updateTiltIndicator(computeElevationDeg());
             radarPresent    = false;
             float bestDist  = cfgAccRange() + 1;
             bool newFarZone[4] = {false, false, false, false};

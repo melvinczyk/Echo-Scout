@@ -31,7 +31,10 @@ namespace Display {
         SETTINGS,
         IMU,
         BATTERY,
-        POWER_CONFIRM
+        POWER_CONFIRM,
+        HORIZON,
+        SPIRIT,
+        COMPASS
     };
 
     struct Button {

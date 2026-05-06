@@ -9,6 +9,39 @@ static bool farZoneDrawn[4] = {false, false, false, false};
 
 bool isBlipActive(int slot) { return blips[slot].active; }
 
+// ── Elevation (tilt) indicator ────────────────────────────────────────────────
+// Shown in the top-right corner of the header (x=175..236, y=4..24).
+// A small bar tilts to show how far the radar boresight is above/below level.
+// Right end rises for upward pitch, falls for downward pitch.
+// Amber when elevation > 20° (readings degraded), green-dim otherwise.
+
+static float prevElev = -9999.0f;
+
+void updateTiltIndicator(float elevDeg) {
+    if (fabsf(elevDeg - prevElev) < 0.5f) return;
+    prevElev = elevDeg;
+
+    Display::tft.fillRect(175, 4, 62, 20, Display::Colors::BG);
+
+    uint16_t col = fabsf(elevDeg) > 20.0f ? Display::Colors::AMBER
+                                           : Display::Colors::GREEN_DIM;
+
+    // Angle text: e.g. "+12°"
+    char buf[7];
+    sprintf(buf, "%+.0f\xB0", elevDeg);
+    Display::tft.setTextColor(col, Display::Colors::BG);
+    Display::tft.drawString(buf, 175, 10, 1);
+
+    // Small tilting bar: centre (224, 14), half-arm = 12px
+    // Positive elevDeg → right end higher (bar rises toward target direction)
+    const int cx = 222, cy = 14, arm = 12;
+    float rad = constrain(elevDeg, -60.0f, 60.0f) * PI / 180.0f;
+    int   dy  = (int)(arm * sinf(rad));
+    Display::tft.drawLine(cx - arm, cy + dy, cx + arm, cy - dy, col);
+    Display::tft.fillCircle(cx, cy, 2, col);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 static float prevDashDist = -9999;
 static float prevDashAngle = -9999;
 static float prevDashSpeed = -9999;
@@ -171,7 +204,9 @@ void clearAllFarZones() {
 
 void drawRadarBase() {
   Display::tft.fillScreen(Display::Colors::BG);
+  prevElev = -9999.0f;
   Display::drawHeader("ECHO SCOUT");
+  updateTiltIndicator(0.0f);
 
   if (!RadarState::found) {
     Display::drawErrorScreen("RADAR NOT FOUND");
