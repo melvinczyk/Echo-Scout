@@ -103,14 +103,17 @@ void drawSettingRowAt(int row, int y) {
     Display::spr.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
     Display::spr.drawString(r.desc, 6, localY + 18, 1);
 
-    int bw = 68, bh = 30, bx = Display::SCREEN_W - bw - 4, by2 = localY + 7;
-    Display::spr.drawRoundRect(bx, by2, bw, bh, 3, Display::Colors::GREEN_DIM);
+    // Single [< val >] box — wider and taller than before
+    constexpr int BW = 84, BH = 36, BX = Display::SCREEN_W - BW - 4;
+    int by2 = localY + (SET_ROW_H - BH) / 2;
+    Display::spr.drawRoundRect(BX, by2, BW, BH, 3, Display::Colors::GREEN_DIM);
+    // divider lines to visually separate < | val | >
     Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::spr.drawString("<", bx + 4, by2 + 10, 1);
+    Display::spr.drawCentreString("<", BX + BW / 6,         by2 + BH / 2 - 8, 2);
     Display::spr.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-    Display::spr.drawCentreString(r.getLabel(*r.idx), bx + bw / 2, by2 + 10, 1);
+    Display::spr.drawCentreString(r.getLabel(*r.idx), BX + BW / 2, by2 + BH / 2 - 4, 1);
     Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::spr.drawRightString(">", bx + bw - 3, by2 + 10, 1);
+    Display::spr.drawCentreString(">", BX + BW * 5 / 6,     by2 + BH / 2 - 8, 2);
   }
 
   Display::spr.pushSprite(0, clipTop);
@@ -162,24 +165,24 @@ void handleSettingsTouch(int tx, int ty) {
     if (settingRows[i].isSectionHeader)
       continue;
     int y = settingRowY(i);
-    if (ty < y || ty >= y + SET_ROW_H - 2)
+    // Full row height as vertical zone — scroll position doesn't affect reliability
+    if (ty < y || ty >= y + SET_ROW_H)
       continue;
-    if (y < Display::HEADER_H || y > Display::SCREEN_H - SET_RESET_H)
+    if (y + SET_ROW_H <= Display::HEADER_H || y >= Display::SCREEN_H - SET_RESET_H)
       continue;
 
-    int bw = 68, bh = 24, bx = Display::SCREEN_W - bw - 4, by2 = y + 6;
-    if (inRect(tx, ty, bx, by2, bw / 3, bh)) {
-      if (*settingRows[i].idx > 0)
-        (*settingRows[i].idx)--;
-      else
-        *settingRows[i].idx = settingRows[i].count - 1;
+    // Match draw constants: BW=84, BX = SCREEN_W - BW - 4 = 152
+    constexpr int BW = 84, BX = Display::SCREEN_W - BW - 4;
+    if (tx < BX) break;  // tapped left of the button box — ignore
+    // Left third = "<" (decrement), right third = ">" (increment)
+    if (tx < BX + BW / 3) {
+      if (*settingRows[i].idx > 0) (*settingRows[i].idx)--;
+      else *settingRows[i].idx = settingRows[i].count - 1;
       drawSettingRowAt(i, y);
       applySettings();
-    } else if (inRect(tx, ty, bx + bw * 2 / 3, by2, bw / 3, bh)) {
-      if (*settingRows[i].idx < settingRows[i].count - 1)
-        (*settingRows[i].idx)++;
-      else
-        *settingRows[i].idx = 0;
+    } else if (tx >= BX + BW * 2 / 3) {
+      if (*settingRows[i].idx < settingRows[i].count - 1) (*settingRows[i].idx)++;
+      else *settingRows[i].idx = 0;
       drawSettingRowAt(i, y);
       applySettings();
     }

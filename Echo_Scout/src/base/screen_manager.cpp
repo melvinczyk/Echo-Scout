@@ -12,6 +12,7 @@
 #include "battery_screen.h"
 #include "power_screen.h"
 #include "spirit_screen.h"
+#include "tof_screen.h"
 #include <esp_sleep.h>
 
 
@@ -20,19 +21,23 @@ static void menuOnTouch(int tx, int ty) {
                         MenuScreen::LAUNCH_W, MenuScreen::LAUNCH_H)) {
         radarResetState();
         ScreenManager::switchScreen(Display::Screen::RADAR);
-    } else if (inRect(tx, ty, MenuScreen::SETTINGS_X, MenuScreen::SETTINGS_Y,
-                               MenuScreen::SETTINGS_W, MenuScreen::SETTINGS_BH)) {
-        settingsScrollY = 0;
-        ScreenManager::switchScreen(Display::Screen::SETTINGS);
-    } else if (inRect(tx, ty, MenuScreen::IMU_X, MenuScreen::IMU_Y,
-                               MenuScreen::IMU_W, MenuScreen::IMU_BH)) {
+    } else if (inRect(tx, ty, MenuScreen::MAP_X, MenuScreen::MAP_Y,
+                               MenuScreen::MAP_W, MenuScreen::MAP_H)) {
+        // 3D MAP — routes to TOF screen (MAP tab coming soon)
+        ScreenManager::switchScreen(Display::Screen::TOF);
+    } else if (inRect(tx, ty, MenuScreen::SCANNER_X, MenuScreen::SCANNER_Y,
+                               MenuScreen::SCANNER_W, MenuScreen::SCANNER_H)) {
+        ScreenManager::switchScreen(Display::Screen::TOF);
+    } else if (inRect(tx, ty, MenuScreen::ATTITUDE_X, MenuScreen::ATTITUDE_Y,
+                               MenuScreen::ATTITUDE_W, MenuScreen::ATTITUDE_H)) {
         ScreenManager::switchScreen(Display::Screen::IMU);
     } else if (inRect(tx, ty, MenuScreen::BATTERY_X, MenuScreen::BATTERY_Y,
                                MenuScreen::BATTERY_W, MenuScreen::BATTERY_H)) {
         ScreenManager::switchScreen(Display::Screen::BATTERY);
-    } else if (inRect(tx, ty, MenuScreen::SPIRIT_X, MenuScreen::SPIRIT_Y,
-                               MenuScreen::SPIRIT_W, MenuScreen::SPIRIT_H)) {
-        ScreenManager::switchScreen(Display::Screen::SPIRIT);
+    } else if (inRect(tx, ty, MenuScreen::SETTINGS_X, MenuScreen::SETTINGS_Y,
+                               MenuScreen::SETTINGS_W, MenuScreen::SETTINGS_BH)) {
+        settingsScrollY = 0;
+        ScreenManager::switchScreen(Display::Screen::SETTINGS);
     } else if (inRect(tx, ty, MenuScreen::POWER_X, MenuScreen::POWER_Y,
                                MenuScreen::POWER_W, MenuScreen::POWER_H)) {
         ScreenManager::switchScreen(Display::Screen::POWER_CONFIRM);
@@ -64,10 +69,11 @@ static const ScreenEntry screenTable[] = {
     { startMenu,          tickMenu,    menuOnTouch  },  // MENU
     { drawRadarBase,      tickRadar,   nullptr      },  // RADAR
     { drawSettingsScreen, nullptr,     nullptr      },  // SETTINGS
-    { drawImuBase,        tickIMU,     nullptr      },  // IMU
+    { drawImuBase,        tickIMU,     handleImuTouch},  // IMU
     { drawBatteryBase,    tickBattery, nullptr      },  // BATTERY
     { drawPowerConfirm,   nullptr,     powerOnTouch },  // POWER_CONFIRM
     { drawSpiritBase,     tickSpirit,  spiritOnTouch},  // SPIRIT
+    { drawTofBase,        tickTof,     handleTofTouch}, // TOF
 };
 
 }
@@ -129,7 +135,13 @@ void ScreenManager::handleTouch() {
             AppState::currentScreen != Display::Screen::POWER_CONFIRM &&
             inRect(tx, ty, 3, 3, 64, Display::HEADER_H - 6)) {
             switchScreen(Display::Screen::MENU);
-        } else {
+        } else if (AppState::currentScreen != Display::Screen::MENU &&
+                   AppState::currentScreen != Display::Screen::POWER_CONFIRM &&
+                   AppState::currentScreen != Display::SPIRIT &&
+                   inRect(tx, ty, Display::CAL_BTN_X, Display::CAL_BTN_Y, Display::CAL_BTN_W, Display::CAL_BTN_H)){
+            switchScreen(Display::Screen::SPIRIT);
+        }
+        else {
             auto fn = screenTable[AppState::currentScreen].onTouch;
             if (fn) fn(tx, ty);
         }

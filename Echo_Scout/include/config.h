@@ -21,6 +21,7 @@ namespace Config {
 
     // Sensors
     constexpr int IMU_ADDRESS = 0x4A;
+    constexpr int TOF_ADDRESS = 0x29;
     constexpr uint8_t TFT_BL_PIN = 45;
     constexpr uint8_t BL_PWM_CH = 0;
     constexpr uint32_t BL_PWM_FREQ = 20000;

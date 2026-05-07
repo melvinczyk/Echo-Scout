@@ -1,4 +1,5 @@
 #include "display.h"
+#include "app_state.h"
 
 TFT_eSPI    Display::tft = TFT_eSPI();
 TFT_eSprite Display::spr = TFT_eSprite(&Display::tft);
@@ -17,13 +18,21 @@ void Display::drawButton(const Button& button) {
 void Display::drawHeader(const char* title) {
     tft.fillRect(0, 0, SCREEN_W, HEADER_H, Colors::BG);
     tft.drawFastHLine(0, HEADER_H - 1, SCREEN_W, Colors::SEP);
+    // Back button (left)
     tft.drawRoundRect(3, 3, 64, HEADER_H - 6, 3, Colors::GREEN_DIM);
     tft.setTextColor(Colors::GREEN_DIM, Colors::BG);
     tft.drawCentreString("< MENU", 35, 7, 2);
+    // Title (centre)
     tft.setTextColor(Colors::GREEN, Colors::BG);
     tft.drawCentreString(title, 120, 9, 2);
-}
+    // CALIBRATE button (right)
+    if (AppState::currentScreen != Display::SPIRIT){
+        tft.drawRoundRect(CAL_BTN_X, CAL_BTN_Y, CAL_BTN_W, CAL_BTN_H, 3, Colors::GREEN_DIM);
+        tft.setTextColor(Colors::GREEN_DIM, Colors::BG);
+        tft.drawCentreString("CAL", CAL_BTN_X + CAL_BTN_W / 2, 7, 2);
 
+        }
+    }
 void Display::drawErrorScreen(const char* text) {
     tft.setTextColor(Colors::RED, Colors::BG);
     tft.drawCentreString(text, 120, 140, 2);

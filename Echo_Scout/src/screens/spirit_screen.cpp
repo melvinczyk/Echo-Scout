@@ -141,7 +141,7 @@ static void drawReadout(float roll, float pitch, bool isLevel) {
                    fabsf(pitch - prevPitchS) > 0.3f ||
                    isLevel != prevLevelS || calFlash;
     if (!changed) return;
-    prevRollS = roll; prevPitchS = pitch; prevLevelS = isLevel;
+    prevRollS = pitch; prevPitchS = roll; prevLevelS = isLevel;
 
     int y = SpiritScreen::DASH_Y;
     int cardW = 112, pad = 4, valY = y + 18;
@@ -190,6 +190,29 @@ void drawSpiritBase() {
     drawBall(CX, CY, true);
     prevBx = CX; prevBy = CY;
     ballDrawn = true;
+}
+
+static void drawPlumbIndicator() {
+  // Portrait device outline — right side of content, above crosshair
+  const int IX = 188, IY = Display::HEADER_H + 8;
+  const int IW = 26, IH = 36;
+  Display::tft.fillRect(IX - 2, IY - 10, IW + 4, IH + 14, Display::Colors::BG);
+  Display::tft.drawRect(IX, IY, IW, IH, Display::Colors::GREEN_DIM);
+  // Top edge bright = pivot edge (hold this end UP)
+  Display::tft.drawFastHLine(IX + 2, IY, IW - 4, Display::Colors::GREEN);
+  // Up-arrow above the top edge (▲)
+  int ax = IX + IW / 2, ay = IY - 2;
+  Display::tft.drawLine(ax, ay - 5, ax - 4, ay, Display::Colors::GREEN);
+  Display::tft.drawLine(ax, ay - 5, ax + 4, ay, Display::Colors::GREEN);
+  Display::tft.drawFastVLine(ax, ay - 5, 5, Display::Colors::GREEN);
+  // Pivot dot at top-centre of device
+  Display::tft.fillCircle(ax, IY, 2, Display::Colors::GREEN);
+  // Dashed plumb reference (straight down from pivot)
+  for (int d = 4; d < IH - 4; d += 5) {
+    Display::tft.drawPixel(ax, IY + d, Display::Colors::GREEN_FAINT);
+  }
+  // Bob dot at rest (centre-bottom)
+  Display::tft.fillCircle(ax, IY + IH - 6, 4, Display::Colors::GREEN_DIM);
 }
 
 void tickSpirit() {
@@ -241,5 +264,6 @@ void tickSpirit() {
     drawBall(newBx, newBy, isLevel);
     ballDrawn = true;
 
+    drawPlumbIndicator();
     drawReadout(tiltX, tiltY, isLevel);
 }

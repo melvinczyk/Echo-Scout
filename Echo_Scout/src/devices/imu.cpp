@@ -22,6 +22,7 @@ bool imuInit() {
         Serial.println("BNO085 report enable failed");
         return false;
     }
+    bno.enableReport(SH2_STEP_COUNTER, 1000000);
     ImuState::ready = true;
     return true;
 }
@@ -38,6 +39,10 @@ static void frameCorrectValues(float ri, float rj, float rk, float rr,
 bool imuUpdate() {
     if (!ImuState::ready) return false;
     if (!bno.getSensorEvent(&sensorVal)) return false;
+    if (sensorVal.sensorId == SH2_STEP_COUNTER) {
+        ImuState::stepCount = sensorVal.un.stepCounter.steps;
+        return false;
+    }
     if (sensorVal.sensorId != SH2_GAME_ROTATION_VECTOR) return false;
 
     float rawI = sensorVal.un.gameRotationVector.i;

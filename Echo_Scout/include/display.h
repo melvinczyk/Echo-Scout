@@ -14,6 +14,11 @@ namespace Display {
     inline constexpr int SCREEN_W = 240;
     inline constexpr int HEADER_H = 28;
 
+    inline constexpr int CAL_BTN_X = 173;
+    inline constexpr int CAL_BTN_Y = 3;
+    inline constexpr int CAL_BTN_W = 64;
+    inline constexpr int CAL_BTN_H = HEADER_H - 6;  // 22
+
     enum Colors : uint16_t {
         BG = 0x0000,
         GREEN = 0x07E0,
@@ -32,14 +37,15 @@ namespace Display {
         IMU,
         BATTERY,
         POWER_CONFIRM,
-        SPIRIT
+        SPIRIT,
+        TOF
     };
 
     struct Button {
-        uint8_t x;
-        uint8_t y;
-        uint8_t w;
-        uint8_t h;
+        uint16_t x;
+        uint16_t y;
+        uint16_t w;
+        uint16_t h;
         uint8_t font_size;
         const char* text;
         Colors button_color;
