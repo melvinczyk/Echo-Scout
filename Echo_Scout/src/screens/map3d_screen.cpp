@@ -16,16 +16,17 @@ static constexpr float FOCAL = 200.0f;
 static constexpr float NEAR = 80.0f;
 
 static constexpr int MAX_PTS = 65536;
-static constexpr int RENDER_MAX = 8192; // max points projected per frame
+static constexpr int RENDER_MAX = 8192;
 
 struct MapPoint { float x, y, z; uint16_t col; };
 
 static MapPoint* pts = nullptr;
-static int nPts = 0; // total written; ring index = nPts % MAX_PTS
+static int nPts = 0;
 
-static constexpr int BTN_Y = Display::SCREEN_H - BTN_BAR + 7;
+static constexpr int BTN_Y  = Display::SCREEN_H - BTN_BAR + 7;
 static constexpr int BTN_BH = 32;
-static constexpr int CLR_X = 8, CLR_W = 224;
+static constexpr int CLR_X  = 8,   CLR_W = 106;
+static constexpr int PAL_X  = 126, PAL_W = 106;
 
 static constexpr float ZONE_STEP = 5.625f * 3.14159265f / 180.0f;
 
@@ -52,30 +53,61 @@ static bool project(float wx, float wy, float wz, int& sx, int& sy) {
            sy >= VIEW_Y + 2 && sy < VIEW_Y + VIEW_H - 2;
 }
 
+struct Stop { float t; uint8_t r, g, b; };
+
+static const Stop STOPS_IRON[] = {
+    {0.00f,   0,   0,   0},
+    {0.10f,  20,   0,  60},
+    {0.30f, 100,   0, 120},
+    {0.50f, 200,   0,  60},
+    {0.65f, 240,  40,   0},
+    {0.80f, 255, 160,   0},
+    {0.92f, 255, 240,  60},
+    {1.00f, 255, 255, 255},
+};
+static const Stop STOPS_VIRIDIS[] = {
+    {0.00f,  68,   1,  84},
+    {0.25f,  58,  82, 139},
+    {0.50f,  32, 145, 140},
+    {0.75f,  94, 201,  98},
+    {1.00f, 253, 231,  37},
+};
+static const Stop STOPS_PLASMA[] = {
+    {0.00f,  13,   8, 135},
+    {0.25f, 126,   3, 168},
+    {0.50f, 204,  71, 120},
+    {0.75f, 248, 149,  64},
+    {1.00f, 240, 249,  33},
+};
+static const Stop STOPS_GRAY[] = {
+    {0.00f,   0,   0,   0},
+    {1.00f, 255, 255, 255},
+};
+
+enum MapPalette { IRON, VIRIDIS, PLASMA, GRAY, NUM_PALETTES };
+static MapPalette mapPalette = IRON;
+
+struct PalDef { const char* name; const Stop* stops; int n; };
+static const PalDef PALETTES[NUM_PALETTES] = {
+    { "IRON",    STOPS_IRON,    8 },
+    { "VIRIDIS", STOPS_VIRIDIS, 5 },
+    { "PLASMA",  STOPS_PLASMA,  5 },
+    { "GRAY",    STOPS_GRAY,    2 },
+};
+
 static uint16_t distCol(float d) {
     float t = 1.0f - (d * (1.0f / 4000.0f));
     if (t < 0.0f) t = 0.0f;
     if (t > 1.0f) t = 1.0f;
 
-    struct Stop { float t; uint8_t r, g, b; };
-    static const Stop stops[] = {
-        {0.00f,   0,   0,   0},
-        {0.25f,  60,   0, 100},
-        {0.50f, 180,   0,  40},
-        {0.65f, 240,  60,   0},
-        {0.80f, 255, 160,   0},
-        {0.92f, 255, 240,  60},
-        {1.00f, 255, 255, 255},
-    };
-    static constexpr int N = 7;
-
+    const PalDef& pal = PALETTES[mapPalette];
     int i = 0;
-    while (i < N - 2 && t > stops[i + 1].t) i++;
-    float f = (t - stops[i].t) / (stops[i + 1].t - stops[i].t);
+    while (i < pal.n - 2 && t > pal.stops[i + 1].t) i++;
+    float f = (t - pal.stops[i].t) / (pal.stops[i + 1].t - pal.stops[i].t);
 
-    uint8_t r = (uint8_t)(stops[i].r + f * (int)(stops[i+1].r - stops[i].r));
-    uint8_t g = (uint8_t)(stops[i].g + f * (int)(stops[i+1].g - stops[i].g));
-    uint8_t b = (uint8_t)(stops[i].b + f * (int)(stops[i+1].b - stops[i].b));
+    uint8_t r = (uint8_t)(pal.stops[i].r + f * (int)(pal.stops[i+1].r - pal.stops[i].r));
+    uint8_t g = (uint8_t)(pal.stops[i].g + f * (int)(pal.stops[i+1].g - pal.stops[i].g));
+    uint8_t b = (uint8_t)(pal.stops[i].b + f * (int)(pal.stops[i+1].b - pal.stops[i].b));
 
     return (uint16_t)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
 }

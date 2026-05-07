@@ -1,5 +1,6 @@
 #include "base/grid.h"
 #include "screens/radar_screen.h"
+#include "base/measurements.h"
 
 GridPx gridPx[MAX_RING_PX];
 int gridPxCount = 0;
@@ -204,8 +205,8 @@ void drawConeGrid() {
     int lx, ly;
     radarToScreenAngle(rMM, 0.0f, lx, ly);
     ly = constrain(ly, CONE_TOP + 4, RadarScreen::APEX_Y - 6);
-    char lbl[8];
-    sprintf(lbl, "%dm", (int)(rMM / 1000));
+    char lbl[10];
+    Measurements::fmtDistShort(rMM, lbl, 10);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawString(lbl, lx + 2, ly - 8, 1);
   }
@@ -213,8 +214,8 @@ void drawConeGrid() {
     int lx, ly;
     radarToScreenAngle(accRange, 0.0f, lx, ly);
     ly = constrain(ly, CONE_TOP + 4, RadarScreen::APEX_Y - 6);
-    char lbl[8];
-    sprintf(lbl, "%dm", (int)(accRange / 1000));
+    char lbl[10];
+    Measurements::fmtDistShort(accRange, lbl, 10);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawString(lbl, lx + 2, ly - 8, 1);
   }
@@ -231,7 +232,7 @@ void drawConeGrid() {
     radarToScreenAngle(cfgMinRange(), 0.0f, lx, ly);
     ly = constrain(ly, CONE_TOP + 4, RadarScreen::APEX_Y - 6);
     char lbl[10];
-    sprintf(lbl, "%dmm", (int)cfgMinRange());
+    Measurements::fmtDistShort(cfgMinRange(), lbl, 10);
     Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
     Display::tft.drawString(lbl, lx + 2, ly - 8, 1);
   }

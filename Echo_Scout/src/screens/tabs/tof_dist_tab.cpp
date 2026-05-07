@@ -1,5 +1,6 @@
 #include "tabs/tof_tabs.h"
 #include "devices/touch.h"
+#include "base/measurements.h"
 using namespace TofTabs;
 
 static constexpr int DIST_BTN_X = 20;
@@ -28,8 +29,7 @@ static void drawDistValue(float d, bool locked) {
         Display::spr.drawCentreString("NO READING", 120, 10, 2);
     } else {
         char buf[24];
-        if (d < 1000.0f) sprintf(buf, "%.0f mm", d);
-        else              sprintf(buf, "%.3f m",  d / 1000.0f);
+        Measurements::fmtDist(d, buf);
         Display::spr.setTextColor(col, Display::Colors::BG);
         Display::spr.drawCentreString(buf, 120, 6, 4);
     }
@@ -54,8 +54,7 @@ static void drawDistViz(float d) {
         int sw = (int)(spread * t);
         Display::tft.drawFastHLine(DIST_VIZ_CX - sw, sy, sw * 2 + 1, Display::Colors::GREEN_FAINT);
         char lbuf[8];
-        if (r < 1000.0f) sprintf(lbuf, "%.0fmm", r);
-        else              sprintf(lbuf, "%.0fm",  r / 1000.0f);
+        Measurements::fmtDistShort(r, lbuf);
         Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
         Display::tft.drawString(lbuf, DIST_VIZ_CX + sw + 3, sy - 4, 1);
     }

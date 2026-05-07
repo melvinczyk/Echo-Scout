@@ -15,6 +15,8 @@ static const char *smLabel(uint8_t i) { return i ? "ON" : "OFF"; }
 static const char *secLabel(uint8_t)  { return ""; }
 static const char *blLabel(uint8_t i) { return blLabels[i]; }
 static const char *slLabel(uint8_t i) { return sleepTimeoutLabels[i]; }
+static const char *duLabel(uint8_t i) { return distUnitLabels[i]; }
+static const char *suLabel(uint8_t i) { return speedUnitLabels[i]; }
 
 
 SRow settingRows[SettingsScreen::NUM_SETTING_ROWS] = {
@@ -31,6 +33,8 @@ SRow settingRows[SettingsScreen::NUM_SETTING_ROWS] = {
     {"SMOOTHING", "position blending", (uint8_t*)&cfg.smoothingOn, 2, smLabel, false},
     {"DISPLAY", "", nullptr, 0, secLabel, true},
     {"BACKLIGHT", "brightness", &cfg.brightnessIdx, NUM_BL, blLabel, false},
+    {"UNITS", "distance units", &cfg.distUnitIdx, NUM_DIST_UNIT, duLabel, false},
+    {"SPEED", "speed units", &cfg.speedUnitIdx, NUM_SPEED_UNIT, suLabel, false},
     {"POWER", "", nullptr, 0, secLabel, true},
     {"SLEEP", "idle sleep timeout", &cfg.sleepTimeoutIdx, NUM_SLEEP, slLabel, false},
 };

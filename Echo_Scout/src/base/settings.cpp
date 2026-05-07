@@ -1,4 +1,5 @@
 #include "base/settings.h"
+#include "base/measurements.h"
 #include "base/grid.h"
 #include "base/config.h"
 #include <Arduino.h>
@@ -7,7 +8,7 @@
 static const char* NVS_NS = "echo";
 static const char* NVS_CFG = "cfg";
 static const char* NVS_VER = "ver";
-static constexpr uint8_t CFG_VERSION = 2;
+static constexpr uint8_t CFG_VERSION = 3;
 
 
 const uint8_t hitsVals[] = {1, 2, 3, 4, 5};
@@ -38,7 +39,10 @@ const char* blLabels[] = {"10%", "20%", "40%", "70%", "100%"};
 const uint32_t sleepTimeoutVals[] = {0, 30000, 60000, 120000, 300000, 600000};
 const char* sleepTimeoutLabels[] = {"OFF", "30s", "1min", "2min", "5min", "10min"};
 
-const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true, 4, 2};
+const char* distUnitLabels[]  = {"METRIC", "IMPERIAL"};
+const char* speedUnitLabels[] = {"cm/s", "m/s", "km/h", "mph"};
+
+const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true, 4, 2, 0, 0};
 Settings cfg = DEFAULT_SETTINGS;
 
 void initBacklight() {
@@ -70,5 +74,7 @@ void applySettings() {
     gridDirty = true;
     buildGridTable();
     ledcWrite(Config::BL_PWM_CH, blVals[cfg.brightnessIdx]);
+    Measurements::distUnit  = (Measurements::DistUnit)cfg.distUnitIdx;
+    Measurements::speedUnit = (Measurements::SpeedUnit)cfg.speedUnitIdx;
     saveSettings();
 }

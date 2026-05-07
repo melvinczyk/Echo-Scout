@@ -1,5 +1,6 @@
 #include "tabs/imu_tabs.h"
 #include "devices/device_icons.h"
+#include "base/measurements.h"
 using namespace ImuTabs;
 
 static constexpr int PLUMB_AX = 120, PLUMB_AY = 60, PLUMB_LEN = 150;
@@ -67,7 +68,7 @@ void tick() {
     drawIconFrontHoriz(200, CONTENT_Y + 34);
     Display::tft.fillCircle(PLUMB_AX, PLUMB_AY, 4, Display::Colors::GREEN_DIM);
     float dev = fabsf(atan2f(ox, sqrtf((float)(PLUMB_LEN*PLUMB_LEN)-ox*ox))) * 180.0f/PI;
-    char buf[12]; sprintf(buf, "%.1f deg", dev);
+    char buf[16]; Measurements::fmtAngle(dev, buf, 16);
     Display::tft.fillRect(40, 268, 160, 14, Display::Colors::BG);
     Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
     Display::tft.drawCentreString(buf, 120, 268, 2);

@@ -3,6 +3,7 @@
 #include "devices/radar.h"
 #include "devices/device_state.h"
 #include "base/grid.h"
+#include "base/measurements.h"
 
 
 static Blip blips[3] = {{0, 0, false}, {0, 0, false}, {0, 0, false}};
@@ -59,9 +60,8 @@ void updateDashboard(float distMM, float angleDeg, float speedCms, bool present)
   Display::tft.fillRect(pad + 1, valY - 1, 3 * cardW + 2 * pad - 2, 30, Display::Colors::BG);
 
   if (present && distMM > 0) {
-    char dbuf[10];
-    dtostrf(distMM / 1000.0f, 4, 2, dbuf);
-    strcat(dbuf, "m");
+    char dbuf[16];
+    Measurements::fmtDist(distMM, dbuf, 16);
     Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
     Display::tft.drawCentreString(dbuf, pad + cardW / 2, valY, 4);
   } else {
@@ -78,8 +78,8 @@ void updateDashboard(float distMM, float angleDeg, float speedCms, bool present)
     Display::tft.drawCentreString("--", pad + (cardW + pad) + cardW / 2, valY, 2);
   }
   if (present) {
-    char sbuf[12];
-    sprintf(sbuf, "%dcm/s", abs((int)speedCms));
+    char sbuf[16];
+    Measurements::fmtSpeed(speedCms, sbuf, 16);
     Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
     Display::tft.drawCentreString(sbuf, pad + 2 * (cardW + pad) + cardW / 2, valY, 4);
   } else {

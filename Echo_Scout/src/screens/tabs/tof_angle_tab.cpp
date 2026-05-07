@@ -1,6 +1,7 @@
 #include "tabs/tof_tabs.h"
 #include "devices/imu.h"
 #include "devices/touch.h"
+#include "base/measurements.h"
 using namespace TofTabs;
 #include <math.h>
 
@@ -107,21 +108,21 @@ static void drawAngleValue(float deg, bool locked) {
         Display::spr.drawCentreString("POINT AT TARGET A", 120, 28, 2);
     } else {
         uint16_t col = (angleState == ANGLE_DONE) ? Display::Colors::GREEN : Display::Colors::AMBER;
-        char buf[24]; sprintf(buf, "%.1f deg", deg);
+        char buf[24]; Measurements::fmtAngle(deg, buf);
         Display::spr.setTextColor(col, Display::Colors::BG);
         Display::spr.drawCentreString(buf, 120, 6, 4);
         if (angleState == ANGLE_DONE && distA > 10.0f && distB > 10.0f) {
             float rad = deg * 3.14159f / 180.0f;
             float d = sqrtf(distA*distA + distB*distB - 2.0f*distA*distB*cosf(rad));
-            char dbuf[24];
-            if (d < 1000.0f) sprintf(dbuf, "DIST  %.0f mm", d);
-            else              sprintf(dbuf, "DIST  %.2f m",  d / 1000.0f);
+            char dbuf[24]; char vbuf[16];
+            Measurements::fmtDist(d, vbuf);
+            snprintf(dbuf, 24, "DIST  %s", vbuf);
             Display::spr.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
             Display::spr.drawCentreString(dbuf, 120, 46, 2);
         } else if (angleState == ANGLE_A_LOCKED && distA > 10.0f) {
-            char dbuf[24];
-            if (distA < 1000.0f) sprintf(dbuf, "A: %.0f mm", distA);
-            else                  sprintf(dbuf, "A: %.2f m",  distA / 1000.0f);
+            char dbuf[24]; char vbuf[16];
+            Measurements::fmtDist(distA, vbuf);
+            snprintf(dbuf, 24, "A: %s", vbuf);
             Display::spr.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
             Display::spr.drawCentreString(dbuf, 120, 46, 2);
         }

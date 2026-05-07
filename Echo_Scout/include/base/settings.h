@@ -14,6 +14,8 @@ struct Settings {
   bool smoothingOn;
   uint8_t brightnessIdx;
   uint8_t sleepTimeoutIdx;
+  uint8_t distUnitIdx;
+  uint8_t speedUnitIdx;
 };
 
 extern const uint8_t hitsVals[];
@@ -40,12 +42,16 @@ constexpr uint8_t NUM_MVTHR = 7;
 
 constexpr uint8_t NUM_BL = 5;
 constexpr uint8_t NUM_SLEEP = 6;
+constexpr uint8_t NUM_DIST_UNIT = 2;
+constexpr uint8_t NUM_SPEED_UNIT = 4;
 constexpr float SMOOTH_ALPHA = 0.4f;
 
 extern const uint8_t blVals[];
 extern const char* blLabels[];
 extern const uint32_t sleepTimeoutVals[];
 extern const char* sleepTimeoutLabels[];
+extern const char* distUnitLabels[];
+extern const char* speedUnitLabels[];
 extern const Settings DEFAULT_SETTINGS;
 extern Settings cfg;
 
