@@ -29,4 +29,16 @@ namespace GridTab  { void drawTab(); void tick(); }
 namespace AngleTab { void drawTab(); void tick(); void onTouch(int tx, int ty); }
 namespace DistTab  { void drawTab(); void tick(); void onTouch(int tx, int ty); }
 
+namespace NormalTab {
+    constexpr int   NUM_H   = 52;
+    constexpr int   VIZ_Y   = TofTabs::CONTENT_Y + NUM_H;
+    constexpr int   VIZ_H   = TofTabs::TAB_Y - VIZ_Y;
+    constexpr int   VIZ_CX  = Display::SCREEN_W / 2;
+    constexpr int   VIZ_CY  = VIZ_Y + VIZ_H / 2;
+    constexpr float SCALE   = 55.0f;
+    constexpr float PLANE_R = 400.0f;
+    constexpr float ARROW_L = 350.0f;
+    void drawTab(); void tick();
+}
+
 #endif

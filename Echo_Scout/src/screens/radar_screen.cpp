@@ -20,18 +20,15 @@ void drawDashboardFrame() {
                Display::Colors::BG);
   Display::tft.drawFastHLine(0, RadarScreen::DASH_Y + RadarScreen::DASH_H, Display::SCREEN_W,
                     Display::Colors::SEP);
-  int cardW = 76, pad = 4;
   for (int i = 0; i < 3; i++) {
-    int cx = pad + i * (cardW + pad);
-    Display::tft.drawRect(cx, RadarScreen::DASH_Y + 2, cardW, RadarScreen::DASH_H - 4,
+    int cx = RadarScreen::DASH_PAD + i * (RadarScreen::CARD_W + RadarScreen::DASH_PAD);
+    Display::tft.drawRect(cx, RadarScreen::DASH_Y + 2, RadarScreen::CARD_W, RadarScreen::DASH_H - 4,
                  Display::Colors::GREEN_DIM);
   }
   Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-  Display::tft.drawCentreString("DIST", pad + cardW / 2, RadarScreen::DASH_Y + 5, 1);
-  Display::tft.drawCentreString("ANGLE", pad + (cardW + pad) + cardW / 2,
-                       RadarScreen::DASH_Y + 5, 1);
-  Display::tft.drawCentreString("SPEED", pad + 2 * (cardW + pad) + cardW / 2,
-                       RadarScreen::DASH_Y + 5, 1);
+  Display::tft.drawCentreString("DIST",  RadarScreen::DASH_PAD + RadarScreen::CARD_W / 2, RadarScreen::DASH_Y + 5, 1);
+  Display::tft.drawCentreString("ANGLE", RadarScreen::DASH_PAD + (RadarScreen::CARD_W + RadarScreen::DASH_PAD) + RadarScreen::CARD_W / 2, RadarScreen::DASH_Y + 5, 1);
+  Display::tft.drawCentreString("SPEED", RadarScreen::DASH_PAD + 2 * (RadarScreen::CARD_W + RadarScreen::DASH_PAD) + RadarScreen::CARD_W / 2, RadarScreen::DASH_Y + 5, 1);
 }
 
 void resetDashboard() {
@@ -56,48 +53,37 @@ void updateDashboard(float distMM, float angleDeg, float speedCms, bool present)
   prevDashAngle = angleDeg;
   prevDashSpeed = speedCms;
 
-  int cardW = 76, pad = 4, valY = RadarScreen::DASH_Y + 20;
-  Display::tft.fillRect(pad + 1, valY - 1, 3 * cardW + 2 * pad - 2, 30, Display::Colors::BG);
+  constexpr int valY = RadarScreen::DASH_Y + 20;
+  Display::tft.fillRect(RadarScreen::DASH_PAD + 1, valY - 1,
+                        3 * RadarScreen::CARD_W + 2 * RadarScreen::DASH_PAD - 2, 30, Display::Colors::BG);
 
   if (present && distMM > 0) {
     char dbuf[16];
     Measurements::fmtDist(distMM, dbuf, 16);
     Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-    Display::tft.drawCentreString(dbuf, pad + cardW / 2, valY, 4);
+    Display::tft.drawCentreString(dbuf, RadarScreen::DASH_PAD + RadarScreen::CARD_W / 2, valY, 4);
   } else {
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("--", pad + cardW / 2, valY, 2);
+    Display::tft.drawCentreString("--", RadarScreen::DASH_PAD + RadarScreen::CARD_W / 2, valY, 2);
   }
   if (present) {
     char abuf[10];
     sprintf(abuf, "%+.0f\xB0", angleDeg);
     Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
-    Display::tft.drawCentreString(abuf, pad + (cardW + pad) + cardW / 2, valY, 4);
+    Display::tft.drawCentreString(abuf, RadarScreen::DASH_PAD + (RadarScreen::CARD_W + RadarScreen::DASH_PAD) + RadarScreen::CARD_W / 2, valY, 4);
   } else {
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("--", pad + (cardW + pad) + cardW / 2, valY, 2);
+    Display::tft.drawCentreString("--", RadarScreen::DASH_PAD + (RadarScreen::CARD_W + RadarScreen::DASH_PAD) + RadarScreen::CARD_W / 2, valY, 2);
   }
   if (present) {
     char sbuf[16];
     Measurements::fmtSpeed(speedCms, sbuf, 16);
     Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
-    Display::tft.drawCentreString(sbuf, pad + 2 * (cardW + pad) + cardW / 2, valY, 4);
+    Display::tft.drawCentreString(sbuf, RadarScreen::DASH_PAD + 2 * (RadarScreen::CARD_W + RadarScreen::DASH_PAD) + RadarScreen::CARD_W / 2, valY, 4);
   } else {
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("--", pad + 2 * (cardW + pad) + cardW / 2, valY, 2);
+    Display::tft.drawCentreString("--", RadarScreen::DASH_PAD + 2 * (RadarScreen::CARD_W + RadarScreen::DASH_PAD) + RadarScreen::CARD_W / 2, valY, 2);
   }
-
-  for (int i = 0; i < 3; i++) {
-    int cx = pad + i * (cardW + pad);
-    Display::tft.drawRect(cx, RadarScreen::DASH_Y + 2, cardW, RadarScreen::DASH_H - 4,
-                 Display::Colors::GREEN_DIM);
-  }
-  Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-  Display::tft.drawCentreString("DIST", pad + cardW / 2, RadarScreen::DASH_Y + 5, 1);
-  Display::tft.drawCentreString("ANGLE", pad + (cardW + pad) + cardW / 2,
-                       RadarScreen::DASH_Y + 5, 1);
-  Display::tft.drawCentreString("SPEED", pad + 2 * (cardW + pad) + cardW / 2,
-                       RadarScreen::DASH_Y + 5, 1);
 }
 
 
@@ -120,28 +106,12 @@ void drawFarZone(int zone, bool on) {
   if (farZoneDrawn[zone] == on) return;
   farZoneDrawn[zone] = on;
   uint16_t col = on ? Display::Colors::RED : Display::Colors::BG;
-  float aStart, aEnd;
-  if (zone == 0) {
-    aStart = -cfgMaxAngle(); aEnd = -20.0f;
-  } else if (zone == 1) {
-    aStart = -20.0f; aEnd = 0.0f;
-  } else if (zone == 2) {
-    aStart = 0.0f; aEnd = 20.0f;
-  } else {
-    aStart = 20.0f; aEnd = cfgMaxAngle();
-  }
-
-  for (float frac = 0.88f; frac <= 1.0f; frac += 0.005f) {
-    float px = frac * CONE_LEN;
-    for (float a = aStart; a <= aEnd; a += 0.5f) {
-      float rad = a * PI / 180.0f;
-      int rx = RadarScreen::APEX_X + (int)(px * sinf(rad));
-      int ry = RadarScreen::APEX_Y - (int)(px * cosf(rad));
-      if (ry < CONE_TOP || ry >= Display::SCREEN_H) continue;
-      Display::tft.drawPixel(rx, ry, col);
-    }
-  }
+  for (int i = 0; i < farZonePxCount[zone]; i++)
+    Display::tft.drawPixel(farZonePx[zone][i].x, farZonePx[zone][i].y, col);
   if (!on) {
+    float halfDeg = cfgMaxAngle();
+    float aStart = (zone == 0) ? -halfDeg : (zone == 1) ? -20.0f : (zone == 2) ? 0.0f : 20.0f;
+    float aEnd   = (zone == 0) ? -20.0f   : (zone == 1) ?  0.0f  : (zone == 2) ? 20.0f : halfDeg;
     for (int i = 0; i < gridPxCount; i++) {
       float dx = gridPx[i].x - RadarScreen::APEX_X;
       float dy = RadarScreen::APEX_Y - gridPx[i].y;

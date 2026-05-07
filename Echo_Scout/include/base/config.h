@@ -24,6 +24,8 @@ namespace Config {
     constexpr uint8_t BL_PWM_RES = 8;
     constexpr uint8_t WAKE_PIN = TOUCH_INT;
 
+    constexpr uint8_t MUX_PIN = 42;
+
     constexpr uint8_t BAT_ADC_PIN = 9;
     constexpr uint16_t BAT_MV_FULL = 4200;
     constexpr uint16_t BAT_MV_EMPTY = 3400;

@@ -18,7 +18,6 @@ namespace Map3dScreen {
     constexpr int   BTN_Y      = Display::SCREEN_H - BTN_BAR + 7;
     constexpr int   BTN_BH     = 32;
     constexpr int   CLR_X      = 8,   CLR_W = 106;
-    constexpr int   PAL_X      = 126, PAL_W = 106;
 
     constexpr float ZONE_STEP  = 5.625f * 3.14159265f / 180.0f;
 }

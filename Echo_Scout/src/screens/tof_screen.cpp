@@ -12,11 +12,12 @@ void drawTofBase() {
     }
 
     static const TabManager::TabEntry tabs[] = {
-        {"GRID", GridTab::drawTab,  GridTab::tick,  nullptr},
-        {"ANGL", AngleTab::drawTab, AngleTab::tick, AngleTab::onTouch},
-        {"DIST", DistTab::drawTab,  DistTab::tick,  DistTab::onTouch},
+        {"GRID", GridTab::drawTab,   GridTab::tick,   nullptr},
+        {"ANGL", AngleTab::drawTab,  AngleTab::tick,  AngleTab::onTouch},
+        {"DIST", DistTab::drawTab,   DistTab::tick,   DistTab::onTouch},
+        {"NRML", NormalTab::drawTab, NormalTab::tick, nullptr},
     };
-    TabManager::init(tabs, 3);
+    TabManager::init(tabs, 4);
 }
 
 void tickTof() {

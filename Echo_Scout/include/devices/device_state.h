@@ -24,7 +24,6 @@ namespace TofState {
     inline bool ready = false;
     inline bool found = false;
     inline float distances[64] = {};
-    inline uint8_t zoneCount = 0;
 }
 
 namespace ImuState {

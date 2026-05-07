@@ -11,6 +11,8 @@ namespace RadarScreen {
     constexpr uint16_t BLIP_COLOR = 0xF800;
     constexpr int DASH_Y = 30;
     constexpr int DASH_H = 54;
+    constexpr int CARD_W = 76;
+    constexpr int DASH_PAD = 4;
     constexpr int APEX_X = 120;
     constexpr int APEX_Y = 316;
 }

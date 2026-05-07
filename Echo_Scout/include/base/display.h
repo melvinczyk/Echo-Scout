@@ -24,6 +24,7 @@ namespace Display {
         GREEN = 0x07E0,
         GREEN_DIM = 0x0300,
         GREEN_FAINT = 0x0180,
+        GRID_MID = 0x0100,
         AMBER = 0xFAE0,
         WHITE = 0xFFFF,
         SEP = 0x02C0,

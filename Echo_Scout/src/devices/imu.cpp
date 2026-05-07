@@ -27,27 +27,15 @@ bool imuInit() {
     return true;
 }
 
-static void frameCorrectValues(float ri, float rj, float rk, float rr,
-                                float& oi, float& oj, float& ok, float& or_) {
-    or_ = rr;
-    oi = ri;
-    oj = rk;
-    ok = -rj;
-}
-
-
 bool imuUpdate() {
     if (!ImuState::ready) return false;
     if (!bno.getSensorEvent(&sensorVal)) return false;
     if (sensorVal.sensorId != SH2_GAME_ROTATION_VECTOR) return false;
 
-    float rawI = sensorVal.un.gameRotationVector.i;
-    float rawJ = sensorVal.un.gameRotationVector.j;
-    float rawK = sensorVal.un.gameRotationVector.k;
-    float rawR = sensorVal.un.gameRotationVector.real;
-
-    float ci, cj, ck, cr;
-    frameCorrectValues(rawI, rawJ, rawK, rawR, ci, cj, ck, cr);
+    float ci = sensorVal.un.gameRotationVector.i;
+    float cj = sensorVal.un.gameRotationVector.k;
+    float ck = -sensorVal.un.gameRotationVector.j;
+    float cr = sensorVal.un.gameRotationVector.real;
 
     ImuState::rawQI = ci; ImuState::rawQJ = cj;
     ImuState::rawQK = ck; ImuState::rawQR = cr;

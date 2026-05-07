@@ -35,9 +35,9 @@ static void drawScopeIndicator() {
 static void drawScopeGridLines() {
     Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H,   Display::SCREEN_W, Display::Colors::GREEN_FAINT);
     Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H*2, Display::SCREEN_W, Display::Colors::GREEN_FAINT);
-    Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H/2,              Display::SCREEN_W, 0x0100);
-    Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H+SCOPE_LANE_H/2,   Display::SCREEN_W, 0x0100);
-    Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H*2+SCOPE_LANE_H/2, Display::SCREEN_W, 0x0100);
+    Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H/2,              Display::SCREEN_W, Display::Colors::GRID_MID);
+    Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H+SCOPE_LANE_H/2,   Display::SCREEN_W, Display::Colors::GRID_MID);
+    Display::tft.drawFastHLine(0, SCOPE_Y0+SCOPE_LANE_H*2+SCOPE_LANE_H/2, Display::SCREEN_W, Display::Colors::GRID_MID);
     Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
     Display::tft.drawString("R", 2, SCOPE_Y0+2, 1);
     Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
@@ -94,7 +94,7 @@ void tick() {
     for (int lane=0; lane<3; lane++) {
         int laneY = SCOPE_Y0 + lane*SCOPE_LANE_H;
         Display::tft.fillRect(nextH, laneY+1, 1, SCOPE_LANE_H-2, Display::Colors::BG);
-        Display::tft.drawPixel(nextH, laneY+SCOPE_LANE_H/2, 0x0100);
+        Display::tft.drawPixel(nextH, laneY+SCOPE_LANE_H/2, Display::Colors::GRID_MID);
         int y1 = scopeToY(scopeBuf[lane][h], laneY);
         if (h > 0) {
             int y0 = scopeToY(scopeBuf[lane][(h-1+SCOPE_SAMPLES)%SCOPE_SAMPLES], laneY);

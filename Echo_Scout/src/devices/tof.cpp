@@ -31,7 +31,6 @@ bool tofInit(void (*progressCb)(uint8_t pct)) {
     if (progressCb) progressCb(100);
 
     TofState::ready = true;
-    TofState::zoneCount = 64;
     Serial.println("VL53L5CX ready");
     return true;
 }

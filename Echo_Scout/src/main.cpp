@@ -15,8 +15,8 @@
 
 void setup() {
   Serial.begin(115200);
-  pinMode(42, OUTPUT);
-  digitalWrite(42, LOW);
+  pinMode(Config::MUX_PIN, OUTPUT);
+  digitalWrite(Config::MUX_PIN, LOW);
 
   touchInit();
   Display::initDisplay();

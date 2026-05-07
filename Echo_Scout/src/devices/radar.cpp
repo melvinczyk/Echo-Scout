@@ -80,8 +80,9 @@ bool smoothTarget(int slot, bool wasTracked, float rawX, float rawY,
   }
   float dx = smoothedX[slot] - lastBlipX[slot];
   float dy = smoothedY[slot] - lastBlipY[slot];
-  if (sqrtf(dx * dx + dy * dy) >= 180.0f && wasTracked) return false;
-  if (sqrtf(dx * dx + dy * dy) > cfgMoveThresh() || !wasTracked) {
+  float moved = sqrtf(dx * dx + dy * dy);
+  if (moved >= 180.0f && wasTracked) return false;
+  if (moved > cfgMoveThresh() || !wasTracked) {
     lastBlipX[slot] = smoothedX[slot];
     lastBlipY[slot] = smoothedY[slot];
     outX = smoothedX[slot];

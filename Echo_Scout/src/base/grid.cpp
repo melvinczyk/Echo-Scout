@@ -1,3 +1,4 @@
+#include <math.h>
 #include "base/grid.h"
 #include "screens/radar_screen.h"
 #include "base/measurements.h"
@@ -5,6 +6,8 @@
 GridPx gridPx[MAX_RING_PX];
 int gridPxCount = 0;
 SpokeEndpoint spokePts[5];
+FarZonePx farZonePx[4][MAX_FAR_ZONE_PX];
+int farZonePxCount[4] = {};
 
 float scaleDist(float distMM) {
   float ratio = constrain(distMM / cfgAccRange(), 0.0f, 1.0f);
@@ -121,6 +124,25 @@ void buildGridTable() {
       if (gy < CONE_TOP || gy >= Display::SCREEN_H)
         continue;
       gridPx[gridPxCount++] = {(int16_t)gx, (int16_t)gy, Display::Colors::GREEN_FAINT};
+    }
+  }
+
+  const float zoneBounds[4][2] = {
+    { -halfDeg, -20.0f }, { -20.0f, 0.0f }, { 0.0f, 20.0f }, { 20.0f, halfDeg }
+  };
+  for (int z = 0; z < 4; z++) {
+    farZonePxCount[z] = 0;
+    float aStart = zoneBounds[z][0], aEnd = zoneBounds[z][1];
+    for (float frac = 0.88f; frac <= 1.0f; frac += 0.005f) {
+      float px = frac * CONE_LEN;
+      for (float a = aStart; a <= aEnd; a += 0.5f) {
+        if (farZonePxCount[z] >= MAX_FAR_ZONE_PX) break;
+        float rad = a * PI / 180.0f;
+        int rx = RadarScreen::APEX_X + (int)(px * sinf(rad));
+        int ry = RadarScreen::APEX_Y - (int)(px * cosf(rad));
+        if (ry < CONE_TOP || ry >= Display::SCREEN_H) continue;
+        farZonePx[z][farZonePxCount[z]++] = { (int16_t)rx, (int16_t)ry };
+      }
     }
   }
 }
