@@ -38,7 +38,8 @@ namespace Display {
         BATTERY,
         POWER_CONFIRM,
         SPIRIT,
-        TOF
+        TOF,
+        MAP3D
     };
 
     struct Button {

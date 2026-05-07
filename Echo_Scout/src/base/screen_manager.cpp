@@ -13,6 +13,7 @@
 #include "power_screen.h"
 #include "calibrate_screen.h"
 #include "tof_screen.h"
+#include "map3d_screen.h"
 #include <esp_sleep.h>
 
 
@@ -23,7 +24,7 @@ static void menuOnTouch(int tx, int ty) {
         ScreenManager::switchScreen(Display::Screen::RADAR);
     } else if (inRect(tx, ty, MenuScreen::MAP_X, MenuScreen::MAP_Y,
                                MenuScreen::MAP_W, MenuScreen::MAP_H)) {
-        ScreenManager::switchScreen(Display::Screen::TOF);
+        ScreenManager::switchScreen(Display::Screen::MAP3D);
     } else if (inRect(tx, ty, MenuScreen::SCANNER_X, MenuScreen::SCANNER_Y,
                                MenuScreen::SCANNER_W, MenuScreen::SCANNER_H)) {
         ScreenManager::switchScreen(Display::Screen::TOF);
@@ -75,6 +76,7 @@ static const ScreenEntry screenTable[] = {
     { drawPowerConfirm,   nullptr,     powerOnTouch },  // POWER_CONFIRM
     { drawSpiritBase,     tickSpirit,  spiritOnTouch},  // SPIRIT
     { drawTofBase,        tickTof,     handleTofTouch}, // TOF
+    { drawMap3dBase,      tickMap3d,   handleMap3dTouch}, // MAP3D
 };
 
 }
