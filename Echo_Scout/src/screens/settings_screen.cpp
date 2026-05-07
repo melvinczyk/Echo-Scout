@@ -68,34 +68,26 @@ void drawSettingRowAt(int row, int y) {
     int ly = y - clipTop;   // local y within sprite
 
     if (r.isSectionHeader) {
-        // Amber separator line + label
         Display::spr.drawFastHLine(0, ly + SettingsScreen::SET_HEADER_H - 1, Display::SCREEN_W, Display::Colors::AMBER);
         Display::spr.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
         Display::spr.drawCentreString(r.label, Display::SCREEN_W / 2, ly + 3, 1);
     } else {
-        // Bottom divider
         Display::spr.drawFastHLine(0, ly + SettingsScreen::SET_ROW_H - 1, Display::SCREEN_W, Display::Colors::GREEN_FAINT);
 
-        // Vertical dividers separating arrow zones from content
         Display::spr.drawFastVLine(SettingsScreen::ARROW_W, ly, SettingsScreen::SET_ROW_H - 1, Display::Colors::GREEN_FAINT);
         Display::spr.drawFastVLine(Display::SCREEN_W - SettingsScreen::ARROW_W, ly, SettingsScreen::SET_ROW_H - 1, Display::Colors::GREEN_FAINT);
 
-        // < arrow
         Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
         Display::spr.drawCentreString("<", SettingsScreen::ARROW_CX, ly + SettingsScreen::SET_ROW_H/2 - 8, 2);
 
-        // > arrow
         Display::spr.drawCentreString(">", SettingsScreen::ARROW_RX, ly + SettingsScreen::SET_ROW_H/2 - 8, 2);
 
-        // Setting name
         Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
         Display::spr.drawString(r.label, SettingsScreen::ARROW_W + 8, ly + 6, 1);
-        // Description (faint, small)
         if (r.desc[0]) {
             Display::spr.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
             Display::spr.drawString(r.desc, SettingsScreen::ARROW_W + 8, ly + 18, 1);
         }
-        // Value (large, vertically centred in lower half, bright)
         Display::spr.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
         Display::spr.drawCentreString(r.getLabel(*r.idx), Display::SCREEN_W / 2,
                                       ly + SettingsScreen::SET_ROW_H/2 + 2, 2);
@@ -113,7 +105,6 @@ void drawSettingsScreen() {
     for (int i = 0; i < SettingsScreen::NUM_SETTING_ROWS; i++)
         drawSettingRowAt(i, settingRowY(i));
 
-    // Fixed reset bar at very bottom
     int ry = Display::SCREEN_H - SettingsScreen::SET_RESET_H;
     Display::tft.fillRect(0, ry, Display::SCREEN_W, SettingsScreen::SET_RESET_H, Display::Colors::BG);
     Display::tft.drawFastHLine(0, ry, Display::SCREEN_W, Display::Colors::SEP);
@@ -124,14 +115,12 @@ void drawSettingsScreen() {
 
 
 void handleSettingsTouch(int tx, int ty) {
-    // Back button (header area handled by screen_manager, but keep save on back tap)
     if (inRect(tx, ty, 3, 3, 58, Display::HEADER_H - 6)) {
         applySettings();
         ScreenManager::switchScreen(Display::Screen::MENU);
         return;
     }
 
-    // Reset button
     int ry = Display::SCREEN_H - SettingsScreen::SET_RESET_H;
     if (inRect(tx, ty, 16, ry + 7, Display::SCREEN_W - 32, 26)) {
         cfg = DEFAULT_SETTINGS;
@@ -141,7 +130,6 @@ void handleSettingsTouch(int tx, int ty) {
         return;
     }
 
-    // Row touches
     for (int i = 0; i < SettingsScreen::NUM_SETTING_ROWS; i++) {
         if (settingRows[i].isSectionHeader) continue;
         int y = settingRowY(i);

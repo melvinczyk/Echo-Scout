@@ -66,17 +66,16 @@ struct ScreenEntry {
     void (*onTouch)(int tx, int ty);
 };
 
-// Init, tick, touch
 static const ScreenEntry screenTable[] = {
-    { startMenu,          tickMenu,    menuOnTouch  },  // MENU
-    { drawRadarBase,      tickRadar,   nullptr      },  // RADAR
-    { drawSettingsScreen, nullptr,     nullptr      },  // SETTINGS
-    { drawImuBase,        tickIMU,     handleImuTouch},  // IMU
-    { drawBatteryBase,    tickBattery, nullptr      },  // BATTERY
-    { drawPowerConfirm,   nullptr,     powerOnTouch },  // POWER_CONFIRM
-    { drawSpiritBase,     tickSpirit,  spiritOnTouch},  // SPIRIT
-    { drawTofBase,        tickTof,     handleTofTouch}, // TOF
-    { drawMap3dBase,      tickMap3d,   handleMap3dTouch}, // MAP3D
+    { startMenu,          tickMenu,    menuOnTouch        },
+    { drawRadarBase,      tickRadar,   nullptr            },
+    { drawSettingsScreen, nullptr,     nullptr            },
+    { drawImuBase,        tickIMU,     handleImuTouch     },
+    { drawBatteryBase,    tickBattery, nullptr            },
+    { drawPowerConfirm,   nullptr,     powerOnTouch       },
+    { drawSpiritBase,     tickSpirit,  spiritOnTouch      },
+    { drawTofBase,        tickTof,     handleTofTouch     },
+    { drawMap3dBase,      tickMap3d,   handleMap3dTouch   },
 };
 
 }
@@ -133,7 +132,6 @@ void ScreenManager::handleTouch() {
             handleSettingsTouch(tx, ty);
         }
     } else if (pressed) {
-        // Universal back button
         if (AppState::currentScreen != Display::Screen::MENU &&
             AppState::currentScreen != Display::Screen::POWER_CONFIRM &&
             inRect(tx, ty, 3, 3, 64, Display::HEADER_H - 6)) {

@@ -12,9 +12,9 @@ void drawTofBase() {
     }
 
     static const TabManager::TabEntry tabs[] = {
-        {"GRID", drawGridTab, tickGridTab, nullptr},
-        {"ANGL", drawAngleTab, tickAngleTab, handleAngleTouch},
-        {"DIST", drawDistTab, tickDistTab, handleDistTouch},
+        {"GRID", GridTab::drawTab,  GridTab::tick,  nullptr},
+        {"ANGL", AngleTab::drawTab, AngleTab::tick, AngleTab::onTouch},
+        {"DIST", DistTab::drawTab,  DistTab::tick,  DistTab::onTouch},
     };
     TabManager::init(tabs, 3);
 }

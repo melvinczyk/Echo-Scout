@@ -27,13 +27,10 @@ void updateLoadingBar(uint8_t pct) {
     LoadingScreen::ld_prevPct = pct;
 
     int filled = static_cast<int>(LoadingScreen::LD_BAR_W * pct / 100);
-    // Filled portion
     Display::tft.fillRect(LoadingScreen::LD_BAR_X, LoadingScreen::LD_BAR_Y, filled, LoadingScreen::LD_BAR_H, Display::Colors::GREEN);
-    // Empty portion
     if (filled < LoadingScreen::LD_BAR_W)
         Display::tft.fillRect(LoadingScreen::LD_BAR_X + filled, LoadingScreen::LD_BAR_Y,
                               LoadingScreen::LD_BAR_W - filled, LoadingScreen::LD_BAR_H, Display::Colors::BG);
-    // Percentage text
     char buf[8]; sprintf(buf, "%d%%", pct);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawCentreString(buf, 120, LoadingScreen::LD_BAR_Y + LoadingScreen::LD_BAR_H + 6, 1);

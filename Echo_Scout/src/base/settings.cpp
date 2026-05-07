@@ -63,7 +63,6 @@ void loadSettings() {
     if (ver == CFG_VERSION && stored == sizeof(cfg))
         prefs.getBytes(NVS_CFG, &cfg, sizeof(cfg));
     prefs.end();
-    // Re-save so the blob is always current size/version
     saveSettings();
 }
 

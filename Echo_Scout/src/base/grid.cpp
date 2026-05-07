@@ -69,7 +69,6 @@ void buildGridTable() {
       gridPx[gridPxCount++] = {(int16_t)gx, (int16_t)gy, Display::Colors::GREEN_FAINT};
     }
   }
-  // Boundary ring
   {
     float px = scaleDist(accRange) * CONE_LEN;
     for (float a = -halfDeg; a <= halfDeg; a += 1.5f) {
@@ -83,7 +82,6 @@ void buildGridTable() {
       gridPx[gridPxCount++] = {(int16_t)gx, (int16_t)gy, Display::Colors::GREEN_DIM};
     }
   }
-  // Far zone arc
   {
     float px = 1.0f * CONE_LEN;
     for (float a = -halfDeg; a <= halfDeg; a += 1.5f) {
@@ -97,7 +95,6 @@ void buildGridTable() {
       gridPx[gridPxCount++] = {(int16_t)gx, (int16_t)gy, Display::Colors::GREEN_FAINT};
     }
   }
-  // Spokes
   for (int s = 0; s < 5; s++) {
     uint16_t col =
         (s == 0 || s == 4) ? Display::Colors::GREEN_DIM : Display::Colors::GREEN_FAINT;
@@ -112,7 +109,6 @@ void buildGridTable() {
       gridPx[gridPxCount++] = {(int16_t)gx, (int16_t)gy, col};
     }
   }
-  // Min range arc
   if (cfgMinRange() > 0) {
     float px = scaleDist(cfgMinRange()) * CONE_LEN;
     for (float a = -halfDeg; a <= halfDeg; a += 1.5f) {
@@ -204,7 +200,6 @@ void drawConeGrid() {
                  RadarScreen::DASH_Y - Display::HEADER_H, Display::Colors::BG);
   Display::tft.fillCircle(RadarScreen::APEX_X, RadarScreen::APEX_Y, 4, Display::Colors::GREEN);
 
-  // Inner ring labels
   for (float rMM = 1000.0f; rMM < accRange; rMM += 1000.0f) {
     int lx, ly;
     radarToScreenAngle(rMM, 0.0f, lx, ly);
@@ -214,7 +209,6 @@ void drawConeGrid() {
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawString(lbl, lx + 2, ly - 8, 1);
   }
-  // Boundary ring label
   {
     int lx, ly;
     radarToScreenAngle(accRange, 0.0f, lx, ly);
@@ -224,7 +218,6 @@ void drawConeGrid() {
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawString(lbl, lx + 2, ly - 8, 1);
   }
-  // Angle labels
   for (int i = 0; i < 5; i++) {
     int lx = constrain((int)spokePts[i].ex, 4, 230);
     int ly = constrain((int)spokePts[i].ey, CONE_TOP + 2, RadarScreen::APEX_Y - 8);
@@ -233,7 +226,6 @@ void drawConeGrid() {
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawCentreString(lbl, lx, ly, 1);
   }
-  // Min range label
   if (cfgMinRange() > 0) {
     int lx, ly;
     radarToScreenAngle(cfgMinRange(), 0.0f, lx, ly);

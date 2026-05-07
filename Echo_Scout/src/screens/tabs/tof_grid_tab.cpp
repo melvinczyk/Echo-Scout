@@ -1,4 +1,5 @@
 #include "tabs/tof_tabs.h"
+using namespace TofTabs;
 
 static constexpr int CELL = 30;
 static constexpr int GRID_Y = CONTENT_Y;
@@ -21,12 +22,14 @@ static void drawAvgBar(float avg) {
     Display::tft.drawCentreString(buf, 120, AVG_Y+2, 1);
 }
 
-void drawGridTab() {
+namespace GridTab {
+
+void drawTab() {
     Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, TAB_Y-CONTENT_Y, Display::Colors::BG);
     for (int i=0; i<64; i++) prevDistances[i]=-1.0f;
     prevAvg=-1.0f;
 }
-void tickGridTab() {
+void tick() {
     if (!tofUpdate()) return;
     float sum=0.0f; int valid=0;
     for (int i=0; i<64; i++) {
@@ -37,3 +40,5 @@ void tickGridTab() {
     float avg = valid>0 ? sum/valid : 0.0f;
     if (fabsf(avg-prevAvg)>5.0f) { drawAvgBar(avg); prevAvg=avg; }
 }
+
+} // namespace GridTab

@@ -1,5 +1,6 @@
 #include "tabs/imu_tabs.h"
 #include "screens/imu_screen.h"
+using namespace ImuTabs;
 
 static const float cubeVerts[8][3] = {
     {-1,-1,-1},{1,-1,-1},{1,1,-1},{-1,1,-1},
@@ -78,7 +79,9 @@ static void updateEulerRow(float roll, float pitch, float yaw) {
     Display::tft.drawCentreString(buf, 200, 261, 1);
 }
 
-void drawCubeTab() {
+namespace CubeTab {
+
+void drawTab() {
     Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, CONTENT_H, Display::Colors::BG);
     cubeDrawn = false; prevRoll=prevPitch=prevYaw=-9999;
     Display::tft.drawFastHLine(0, 250, Display::SCREEN_W, Display::Colors::GREEN_FAINT);
@@ -89,7 +92,7 @@ void drawCubeTab() {
     drawCubeEdges(Display::Colors::GREEN);
     cubeDrawn = true;
 }
-void tickCubeTab() {
+void tick() {
     if (!imuUpdate()) return;
     eraseCube();
     drawCubeEdges(Display::Colors::GREEN);
@@ -97,3 +100,5 @@ void tickCubeTab() {
     float roll, pitch, yaw; toEuler(roll, pitch, yaw);
     updateEulerRow(roll, pitch, yaw);
 }
+
+} // namespace CubeTab

@@ -7,7 +7,6 @@
 #include "devices/device_state.h"
 #include <esp_heap_caps.h>
 
-// ── Layout ───────────────────────────────────────────────────────────────────
 static constexpr int VIEW_Y = Display::HEADER_H;
 static constexpr int BTN_BAR = 48;
 static constexpr int VIEW_H = Display::SCREEN_H - VIEW_Y - BTN_BAR;
@@ -16,8 +15,6 @@ static constexpr int VIEW_CY = VIEW_Y + VIEW_H / 2;
 static constexpr float FOCAL = 200.0f;
 static constexpr float NEAR = 80.0f;
 
-// ── Point cloud - PSRAM ring buffer ──────────────────────────────────────────
-// 65536 points × 14 bytes = 896 KB in PSRAM
 static constexpr int MAX_PTS = 65536;
 static constexpr int RENDER_MAX = 8192; // max points projected per frame
 
@@ -26,15 +23,11 @@ struct MapPoint { float x, y, z; uint16_t col; };
 static MapPoint* pts = nullptr;
 static int nPts = 0; // total written; ring index = nPts % MAX_PTS
 
-// ── Button constants ─────────────────────────────────────────────────────────
 static constexpr int BTN_Y = Display::SCREEN_H - BTN_BAR + 7;
 static constexpr int BTN_BH = 32;
 static constexpr int CLR_X = 8, CLR_W = 224;
 
-// ── Zone FoV - VL53L5CX 8×8, ~45° total FoV ────────────────────────────────
 static constexpr float ZONE_STEP = 5.625f * 3.14159265f / 180.0f;
-
-// ── Math helpers ─────────────────────────────────────────────────────────────
 
 static inline void qRot(float qr, float qi, float qj, float qk,
                          float vx, float vy, float vz,
@@ -59,9 +52,7 @@ static bool project(float wx, float wy, float wz, int& sx, int& sy) {
            sy >= VIEW_Y + 2 && sy < VIEW_Y + VIEW_H - 2;
 }
 
-// Iron colormap: far=black, mid=purple→red→orange, close=yellow→white
 static uint16_t distCol(float d) {
-    // t=0 far/cold, t=1 close/hot
     float t = 1.0f - (d * (1.0f / 4000.0f));
     if (t < 0.0f) t = 0.0f;
     if (t > 1.0f) t = 1.0f;
@@ -104,14 +95,11 @@ static bool zoneWorld(int zone, float dist,
     return true;
 }
 
-// ── Rendering ────────────────────────────────────────────────────────────────
-
 static void renderView() {
     Display::spr.deleteSprite();
     Display::spr.createSprite(Display::SCREEN_W, VIEW_H);
     Display::spr.fillSprite(Display::Colors::BG);
 
-    // Subsample stored cloud so we always project at most RENDER_MAX points
     int count = min(nPts, MAX_PTS);
     int step = max(1, count / RENDER_MAX);
     for (int i = 0; i < count; i += step) {
@@ -120,7 +108,6 @@ static void renderView() {
             Display::spr.drawPixel(sx, sy - VIEW_Y, pts[i].col);
     }
 
-    // Live ToF scan - 3×3 bright dots
     if (TofState::ready) {
         float qr = ImuState::qR, qi = ImuState::qI,
               qj = ImuState::qJ, qk = ImuState::qK;
@@ -137,14 +124,12 @@ static void renderView() {
         }
     }
 
-    // Crosshair
     int cx = VIEW_CX, cy = VIEW_CY - VIEW_Y;
     Display::spr.drawFastHLine(cx - 12, cy,      9,  Display::Colors::GREEN_DIM);
     Display::spr.drawFastHLine(cx + 4,  cy,      9,  Display::Colors::GREEN_DIM);
     Display::spr.drawFastVLine(cx,      cy - 12, 9,  Display::Colors::GREEN_DIM);
     Display::spr.drawFastVLine(cx,      cy + 4,  9,  Display::Colors::GREEN_DIM);
 
-    // Point count + capacity
     char buf[24];
     if (nPts >= MAX_PTS)
         sprintf(buf, "%dk pts (ring)", nPts/1000);
@@ -166,8 +151,6 @@ static void drawButtons() {
     Display::tft.drawCentreString("CLEAR", CLR_X + CLR_W/2, BTN_Y + 9, 2);
 }
 
-// ── Auto-capture ──────────────────────────────────────────────────────────────
-
 static void captureScan() {
     if (!TofState::ready || !ImuState::ready || !pts) return;
     float qr = ImuState::qR, qi = ImuState::qI,
@@ -179,8 +162,6 @@ static void captureScan() {
         nPts++;
     }
 }
-
-// ── Public API ───────────────────────────────────────────────────────────────
 
 void drawMap3dBase() {
     if (!pts)

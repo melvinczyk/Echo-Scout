@@ -5,5 +5,6 @@
 
 namespace AppState {
     inline Display::Screen currentScreen = Display::Screen::MENU;
+    inline uint8_t currentTab = 0;
 }
 #endif

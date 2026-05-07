@@ -17,7 +17,7 @@ namespace Display {
     inline constexpr int CAL_BTN_X = 173;
     inline constexpr int CAL_BTN_Y = 3;
     inline constexpr int CAL_BTN_W = 64;
-    inline constexpr int CAL_BTN_H = HEADER_H - 6;  // 22
+    inline constexpr int CAL_BTN_H = HEADER_H - 6;
 
     enum Colors : uint16_t {
         BG = 0x0000,

@@ -9,9 +9,9 @@ namespace RadarState {
 
     inline bool newFrame = false;
     inline bool present = false;
-    inline float distance = 0.0f;   // mm
-    inline float azimuth = 0.0f;   // degrees
-    inline float speed = 0.0f;   // cm/s
+    inline float distance = 0.0f;
+    inline float azimuth = 0.0f;
+    inline float speed = 0.0f;
 
     inline bool slotActive[3] = {};
     inline float slotX[3] = {};

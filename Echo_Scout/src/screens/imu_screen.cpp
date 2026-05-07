@@ -14,9 +14,9 @@ void drawImuBase() {
     }
 
     static const TabManager::TabEntry tabs[] = {
-        {"CUBE", drawCubeTab, tickCubeTab, nullptr},
-        {"PLMB", drawPlumbTab, tickPlumbTab, nullptr},
-        {"SCPE", drawScopeTab, tickScopeTab, nullptr},
+        {"CUBE", CubeTab::drawTab,  CubeTab::tick,  nullptr},
+        {"PLMB", PlumbTab::drawTab, PlumbTab::tick, nullptr},
+        {"SCPE", ScopeTab::drawTab, ScopeTab::tick, nullptr},
     };
     TabManager::init(tabs, 3);
 }

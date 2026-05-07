@@ -28,7 +28,6 @@ static MenuState menuState = {
 static Display::AsciiArt echo = {AsciiArtInstance::ECHO, std::size(AsciiArtInstance::ECHO), 5, 9, 42, 16};
 static Display::AsciiArt scout = {AsciiArtInstance::SCOUT, std::size(AsciiArtInstance::SCOUT), 5, 9, 30, 80};
     
-// Tools row
 static const Display::Button toolButtons[] = {
     { MenuScreen::SCANNER_X,  MenuScreen::SCANNER_Y,  MenuScreen::SCANNER_W,  MenuScreen::SCANNER_H,  1, "SCANNER",
       Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM },
@@ -36,7 +35,6 @@ static const Display::Button toolButtons[] = {
       Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM },
 };
 
-// Bottom utility row
 static const Display::Button utilButtons[] = {
     { MenuScreen::SETTINGS_X, MenuScreen::SETTINGS_Y, MenuScreen::SETTINGS_W, MenuScreen::SETTINGS_BH, 1, "SETTINGS",
       Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM },
@@ -157,13 +155,12 @@ void startMenu() {
     Display::drawAsciiArt(scout, Display::Colors::GREEN_FAINT);
     drawStatusBar();
 
-    // Section separators (aligned to button Y positions)
-    Display::tft.drawFastHLine(8, 158, 224, Display::Colors::SEP);  // above RADAR (160)
-    Display::tft.drawFastHLine(8, 204, 224, Display::Colors::SEP);  // RADAR/MAP gap
-    Display::tft.drawFastHLine(8, 236, 224, Display::Colors::SEP);  // above tools (238)
-    Display::tft.drawFastHLine(8, 264, 224, Display::Colors::SEP);  // above settings/battery (266)
-    Display::tft.drawFastHLine(8, 290, 224, Display::Colors::SEP);  // above power zone
-    Display::tft.drawFastHLine(8, 300, 224, Display::Colors::SEP);  // power divider
+    Display::tft.drawFastHLine(8, 158, 224, Display::Colors::SEP);
+    Display::tft.drawFastHLine(8, 204, 224, Display::Colors::SEP);
+    Display::tft.drawFastHLine(8, 236, 224, Display::Colors::SEP);
+    Display::tft.drawFastHLine(8, 264, 224, Display::Colors::SEP);
+    Display::tft.drawFastHLine(8, 290, 224, Display::Colors::SEP);
+    Display::tft.drawFastHLine(8, 300, 224, Display::Colors::SEP);
 
     drawLaunchButton(true);
     drawMapButton();

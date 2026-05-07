@@ -14,7 +14,6 @@ void drawPowerConfirm() {
     Display::tft.drawCentreString("POWER", 120, 55, 4);
     Display::tft.drawCentreString("OPTIONS", 120, 90, 4);
 
-    // RESTART button (top)
     Display::tft.drawRect(20, 148, 200, 44, Display::Colors::AMBER);
     Display::tft.drawRect(22, 150, 196, 40, Display::Colors::AMBER);
     Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
@@ -22,7 +21,6 @@ void drawPowerConfirm() {
     Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
     Display::tft.drawCentreString("rescans all devices", 120, 185, 1);
 
-    // POWER OFF button (middle)
     Display::tft.drawRect(20, 204, 200, 44, Display::Colors::RED);
     Display::tft.drawRect(22, 206, 196, 40, Display::Colors::RED);
     Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
@@ -30,7 +28,6 @@ void drawPowerConfirm() {
     Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
     Display::tft.drawCentreString("tap screen to wake", 120, 241, 1);
 
-    // CANCEL button (bottom)
     Display::tft.drawRect(20, 260, 200, 44, Display::Colors::GREEN_DIM);
     Display::tft.drawRect(22, 262, 196, 40, Display::Colors::GREEN_DIM);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);

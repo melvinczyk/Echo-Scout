@@ -31,25 +31,19 @@ static const float ACCEL = 0.35f; // how strongly tilt pulls the ball
 
 
 static void drawStaticElements() {
-    // Outer bowl rings
     Display::tft.drawCircle(CX, CY, R,     COL_BOWL);
     Display::tft.drawCircle(CX, CY, R + 1, COL_BOWL);
 
-    // Inner dead-zone ring
     Display::tft.drawCircle(CX, CY, DEAD_ZONE,     0x0200);
     Display::tft.drawCircle(CX, CY, DEAD_ZONE + 1, 0x0200);
 
-    // Cross-hair lines
     Display::tft.drawFastHLine(CX - R + 6, CY, 2*(R - 6) + 1, COL_CROSS);
     Display::tft.drawFastVLine(CX, CY - R + 6, 2*(R - 6) + 1, COL_CROSS);
 
-    // Graduation ticks at ±30° (half-range)
     float ang30 = 30.0f * 3.14159f / 180.0f;
-    int tx = (int)(MAX_DISP * 0.667f);   // ~30° displacement
-    // Horizontal ticks
+    int tx = (int)(MAX_DISP * 0.667f);
     Display::tft.drawFastVLine(CX + tx, CY - 5, 10, COL_CROSS);
     Display::tft.drawFastVLine(CX - tx, CY - 5, 10, COL_CROSS);
-    // Vertical ticks
     Display::tft.drawFastHLine(CX - 5, CY + tx, 10, COL_CROSS);
     Display::tft.drawFastHLine(CX - 5, CY - tx, 10, COL_CROSS);
 }
@@ -57,8 +51,6 @@ static void drawStaticElements() {
 static void eraseBall(int bsx, int bsy) {
     if (!ballDrawn) return;
     Display::tft.fillCircle(bsx, bsy, BALL_RADIUS + 1, Display::Colors::BG);
-    // Redraw cross-hair segments that may have been erased
-    // Horizontal segment in ball area
     int hx0 = max(CX - R + 6, bsx - BALL_RADIUS - 1);
     int hx1 = min(CX + R - 6, bsx + BALL_RADIUS + 1);
     if (hx0 < hx1 && bsy - 1 <= CY && CY <= bsy + 1) {
@@ -73,11 +65,8 @@ static void eraseBall(int bsx, int bsy) {
 
 static void drawBall(int bsx, int bsy, bool isLevel) {
     uint16_t col = isLevel ? COL_BALL_OK : COL_BALL_NG;
-    // Filled circle
     Display::tft.fillCircle(bsx, bsy, BALL_RADIUS, col);
-    // Highlight spot (top-left quadrant)
     Display::tft.fillCircle(bsx - BALL_RADIUS/3, bsy - BALL_RADIUS/3, BALL_RADIUS/4, Display::Colors::WHITE);
-    // Border
     Display::tft.drawCircle(bsx, bsy, BALL_RADIUS, Display::Colors::BG);
 }
 
@@ -85,12 +74,10 @@ static bool spiritLevel = false;
 static bool calFlash = false;
 static unsigned long calFlashMs = 0;
 
-// Equal-width bottom buttons
 static constexpr int CAL_BTN_X = 8,   CAL_BTN_Y = 298, CAL_BTN_W = 110, CAL_BTN_H = 18;
 static constexpr int RST_BTN_X = 122, RST_BTN_Y = 298, RST_BTN_W = 110, RST_BTN_H = 18;
 
 static void drawBottomButtons() {
-    // CALIBRATE - shows "CAL OK" briefly after calibration
     Display::tft.fillRect(CAL_BTN_X, CAL_BTN_Y, CAL_BTN_W, CAL_BTN_H, Display::Colors::BG);
     bool flash = calFlash && (millis() - calFlashMs < 1500);
     if (!flash) calFlash = false;
@@ -98,7 +85,6 @@ static void drawBottomButtons() {
     Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
     Display::tft.drawCentreString(flash ? "CAL OK" : "CALIBRATE",
                                   CAL_BTN_X + CAL_BTN_W/2, CAL_BTN_Y + 4, 1);
-    // RESET
     Display::tft.fillRect(RST_BTN_X, RST_BTN_Y, RST_BTN_W, RST_BTN_H, Display::Colors::BG);
     Display::tft.drawRect(RST_BTN_X, RST_BTN_Y, RST_BTN_W, RST_BTN_H, Display::Colors::RED);
     Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
@@ -125,9 +111,7 @@ void handleSpiritTouch(int tx, int ty) {
         drawBottomButtons();
     }
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
-// ── readout ───────────────────────────────────────────────────────────────────
 static float prevRollS = -9999, prevPitchS = -9999;
 static bool prevLevelS = false;
 
@@ -153,8 +137,6 @@ static void drawReadout(float roll, float pitch, bool isLevel) {
 
     drawBottomButtons();
 }
-
-// ── public API ────────────────────────────────────────────────────────────────
 
 void drawSpiritBase() {
     Display::tft.fillScreen(Display::Colors::BG);
@@ -205,28 +187,23 @@ void tickSpirit() {
     float tiltX = asinf(constrain(gI, -1.0f, 1.0f)) * 180.0f / 3.14159f;
     float tiltY = asinf(constrain(gK, -1.0f, 1.0f)) * 180.0f / 3.14159f;
 
-    // Target position from tilt
     float tx = constrain(gI * MAX_DISP, -MAX_DISP, MAX_DISP);
     float ty = constrain(gK * MAX_DISP, -MAX_DISP, MAX_DISP);
 
-    // Clamp target inside bowl radius
     float tdist = sqrtf(tx*tx + ty*ty);
     if (tdist > MAX_DISP) { tx *= MAX_DISP/tdist; ty *= MAX_DISP/tdist; }
 
-    // Damped spring physics
     vx = vx * DAMPING + (tx - bx) * ACCEL;
     vy = vy * DAMPING + (ty - by) * ACCEL;
     bx += vx;
     by += vy;
 
-    // Keep ball inside bowl
     float dist = sqrtf(bx*bx + by*by);
     if (dist > MAX_DISP) { bx *= MAX_DISP/dist; by *= MAX_DISP/dist; vx = 0; vy = 0; }
 
     int newBx = CX + (int)bx;
     int newBy = CY + (int)by;
 
-    // Only redraw if moved more than 1px
     if (abs(newBx - prevBx) < 1 && abs(newBy - prevBy) < 1) return;
 
     eraseBall(prevBx, prevBy);

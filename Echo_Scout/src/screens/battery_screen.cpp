@@ -56,7 +56,6 @@ static void drawFillBar(int pct, uint16_t col) {
     if (fillW > 0)
         Display::tft.fillRect(innerX, innerY, fillW, innerH, col);
 
-    // Restore border after fill
     Display::tft.drawRoundRect(BatteryScreen::BAR_X, BatteryScreen::BAR_Y, BatteryScreen::BAR_W, BatteryScreen::BAR_H, BatteryScreen::BAR_CORNER, Display::Colors::GREEN_DIM);
 }
 
@@ -115,7 +114,6 @@ void drawBatteryBase() {
 
     Display::drawHeader("BATTERY");
 
-    // Static labels and separators
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawCentreString("CHARGE LEVEL", 120, BatteryScreen::LABEL_CHG_Y, 1);
     drawBatteryShell();
@@ -124,7 +122,6 @@ void drawBatteryBase() {
     pinMode(Config::BAT_ADC_PIN, INPUT);
     for (int i = 0; i < SMOOTH_N; i++) sampleVoltage();
 
-    // Initial draw
     lastSampleMs = millis();
     float v = sampleVoltage();
     int pct = voltsToPercent(v);

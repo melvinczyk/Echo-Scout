@@ -18,7 +18,6 @@ void setup() {
   pinMode(42, OUTPUT);
   digitalWrite(42, LOW);
 
-  // First boot up the display and imu
   touchInit();
   Display::initDisplay();
   loadSettings();
@@ -27,13 +26,11 @@ void setup() {
   esp_sleep_enable_ext0_wakeup((gpio_num_t)Config::WAKE_PIN, 0);
   imuInit();
 
-  // The ToF needs to flash its own firmware
   drawLoadingScreen();
   updateLoadingBar(0);
   tofInit(updateLoadingBar);
   delay(250);
 
-  // We try to start the radar
   Serial1.begin(Config::RADAR_BAUD, SERIAL_8N1, Config::RADAR_RX, Config::RADAR_TX);
   delay(500);
   radarInit();

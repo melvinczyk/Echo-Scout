@@ -1,24 +1,23 @@
 #include "tabs/tof_tabs.h"
 #include "devices/touch.h"
+using namespace TofTabs;
 
-// Zones 27,28,35,36 are the inner 2x2 of the 8x8 grid (rows 3-4, cols 3-4).
 static constexpr int DIST_BTN_X = 20;
 static constexpr int DIST_BTN_Y = TAB_Y - 44;
 static constexpr int DIST_BTN_W = 200;
 static constexpr int DIST_BTN_H = 44;
-static constexpr int DIST_NUM_H = 36;                          // number strip height
-static constexpr int DIST_VIZ_Y = CONTENT_Y + DIST_NUM_H;     // 64
-static constexpr int DIST_VIZ_BOT = DIST_BTN_Y - 4;           // just above button
-static constexpr int DIST_VIZ_H = DIST_VIZ_BOT - DIST_VIZ_Y; // ~168px
+static constexpr int DIST_NUM_H = 36;
+static constexpr int DIST_VIZ_Y = CONTENT_Y + DIST_NUM_H;
+static constexpr int DIST_VIZ_BOT = DIST_BTN_Y - 4;
+static constexpr int DIST_VIZ_H = DIST_VIZ_BOT - DIST_VIZ_Y;
 static constexpr int DIST_VIZ_CX = 120;
-static constexpr float DIST_VIZ_MAX = 4000.0f;                // 4 m max display range
+static constexpr float DIST_VIZ_MAX = 4000.0f;
 
 enum DistState { DIST_LIVE, DIST_LOCKED };
 static DistState distState = DIST_LIVE;
 static float distLocked = 0.0f;
 static float distPrevLive = -9999.0f;
 
-// Number strip sprite at top
 static void drawDistValue(float d, bool locked) {
     uint16_t col = locked ? Display::Colors::AMBER : Display::Colors::GREEN;
     Display::spr.deleteSprite();
@@ -38,21 +37,17 @@ static void drawDistValue(float d, bool locked) {
     Display::spr.deleteSprite();
 }
 
-// 3D perspective rangefinder visualization
 static void drawDistViz(float d) {
     Display::tft.fillRect(0, DIST_VIZ_Y, Display::SCREEN_W, DIST_VIZ_H, Display::Colors::BG);
 
-    int devY = DIST_VIZ_BOT; // device at bottom
+    int devY = DIST_VIZ_BOT;
     int topY = DIST_VIZ_Y;
-    int spread = 52;          // half-width of frustum at max range
+    int spread = 52;
 
-    // Perspective guide lines
     Display::tft.drawLine(DIST_VIZ_CX, devY, DIST_VIZ_CX - spread, topY, Display::Colors::GREEN_FAINT);
     Display::tft.drawLine(DIST_VIZ_CX, devY, DIST_VIZ_CX + spread, topY, Display::Colors::GREEN_FAINT);
-    // Centre beam
     Display::tft.drawFastVLine(DIST_VIZ_CX, topY, DIST_VIZ_H, Display::Colors::GREEN_FAINT);
 
-    // Scale rings every 500 mm
     for (float r = 500.0f; r <= DIST_VIZ_MAX + 1.0f; r += 500.0f) {
         float t = r / DIST_VIZ_MAX;
         int sy = devY - (int)(t * DIST_VIZ_H);
@@ -65,20 +60,16 @@ static void drawDistViz(float d) {
         Display::tft.drawString(lbuf, DIST_VIZ_CX + sw + 3, sy - 4, 1);
     }
 
-    // Device block at origin
     Display::tft.fillRect(DIST_VIZ_CX - 7, devY - 5, 14, 6, Display::Colors::GREEN_DIM);
 
-    // Target marker at measured distance
     if (d > 10.0f) {
         float dc = (d > DIST_VIZ_MAX) ? DIST_VIZ_MAX : d;
         float t = dc / DIST_VIZ_MAX;
         int ty = devY - (int)(t * DIST_VIZ_H);
         int tw = (int)(spread * t);
-        // Filled horizontal bar at target distance
         Display::tft.fillRect(DIST_VIZ_CX - tw, ty - 1, tw * 2 + 1, 3,
                                d > DIST_VIZ_MAX ? Display::Colors::RED : Display::Colors::GREEN);
         Display::tft.fillCircle(DIST_VIZ_CX, ty, 5, Display::Colors::GREEN);
-        // Fill beam between device and target
         Display::tft.drawLine(DIST_VIZ_CX, devY - 5, DIST_VIZ_CX, ty, Display::Colors::GREEN);
     }
 }
@@ -94,7 +85,9 @@ static void drawDistBtn(bool locked) {
                                   120, DIST_BTN_Y + 14, 2);
 }
 
-void drawDistTab() {
+namespace DistTab {
+
+void drawTab() {
     Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, TAB_Y - CONTENT_Y, Display::Colors::BG);
     distState = DIST_LIVE;
     distPrevLive = -9999.0f;
@@ -105,7 +98,7 @@ void drawDistTab() {
     drawDistBtn(false);
 }
 
-void tickDistTab() {
+void tick() {
     if (distState == DIST_LOCKED) return;
     if (!tofUpdate()) return;
     float d = centerDist();
@@ -115,7 +108,7 @@ void tickDistTab() {
     drawDistViz(d);
 }
 
-void handleDistTouch(int tx, int ty) {
+void onTouch(int tx, int ty) {
     if (!inRect(tx, ty, DIST_BTN_X, DIST_BTN_Y, DIST_BTN_W, DIST_BTN_H)) return;
     if (distState == DIST_LIVE) {
         tofUpdate();
@@ -130,3 +123,5 @@ void handleDistTouch(int tx, int ty) {
         drawDistBtn(false);
     }
 }
+
+} // namespace DistTab

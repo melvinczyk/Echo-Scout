@@ -1,5 +1,6 @@
 #include "base/tab_manager.h"
 #include "base/display.h"
+#include "base/app_state.h"
 
 namespace {
     static const TabManager::TabEntry* _tabs = nullptr;
@@ -30,15 +31,17 @@ void TabManager::init(const TabEntry* tabs, uint8_t count, uint8_t defaultTab) {
     _count = count;
     _active = defaultTab;
     _tabW = Display::SCREEN_W / count;
+    AppState::currentTab = defaultTab;
     drawTabBar();
-    if (_tabs[_active].enter) _tabs[_active].enter();
+    if (_tabs[_active].draw) _tabs[_active].draw();
 }
 
 void TabManager::switchTab(uint8_t idx) {
     if (idx >= _count || idx == _active) return;
     _active = idx;
+    AppState::currentTab = idx;
     drawTabBar();
-    if (_tabs[_active].enter) _tabs[_active].enter();
+    if (_tabs[_active].draw) _tabs[_active].draw();
 }
 
 void TabManager::tick() {

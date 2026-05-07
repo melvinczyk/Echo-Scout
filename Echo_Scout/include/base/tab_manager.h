@@ -10,7 +10,7 @@ namespace TabManager {
 
     struct TabEntry {
         const char* label;
-        void (*enter)();
+        void (*draw)();
         void (*tick)();
         void (*onTouch)(int tx, int ty);
     };

@@ -1,6 +1,7 @@
 #include "tabs/tof_tabs.h"
 #include "devices/imu.h"
 #include "devices/touch.h"
+using namespace TofTabs;
 #include <math.h>
 
 enum AngleState { ANGLE_IDLE, ANGLE_A_LOCKED, ANGLE_DONE };
@@ -8,17 +9,15 @@ static AngleState angleState = ANGLE_IDLE;
 static float vecAx, vecAy, vecAz, vecBx, vecBy, vecBz;
 static float lockedAngle = 0.0f;
 static float prevLiveAngle = -9999.0f;
-static float distA = 0.0f, distB = 0.0f; // ToF distances at lock points (mm)
+static float distA = 0.0f, distB = 0.0f;
 
-// Layout: 76px number strip at top + viz filling rest down to button
 static constexpr int ANGL_NUM_H = 76;
 static constexpr int ANGL_BTN_H = 44;
-static constexpr int ANGL_BTN_Y = TAB_Y - ANGL_BTN_H; // 236
-static constexpr int ANGL_VIZ_H = ANGL_BTN_Y - 2 - (CONTENT_Y + ANGL_NUM_H); // 130
+static constexpr int ANGL_BTN_Y = TAB_Y - ANGL_BTN_H;
+static constexpr int ANGL_VIZ_H = ANGL_BTN_Y - 2 - (CONTENT_Y + ANGL_NUM_H);
 
-// Viz centre - pushed lower by the taller number strip
 static constexpr int VIZ_CX = 120;
-static constexpr int VIZ_CY = CONTENT_Y + ANGL_NUM_H + ANGL_VIZ_H / 2 + 20; // 169
+static constexpr int VIZ_CY = CONTENT_Y + ANGL_NUM_H + ANGL_VIZ_H / 2 + 20;
 static constexpr float VIZ_SCALE = 80.0f;
 
 static void getBoresightWorld(float& wx, float& wy, float& wz) {
@@ -30,7 +29,6 @@ static void getBoresightWorld(float& wx, float& wy, float& wz) {
     if (mag>0.001f) { wx/=mag; wy/=mag; wz/=mag; }
 }
 
-// Cabinet projection: Y axis goes into the screen (depth cue)
 static void projectViz(float wx, float wy, float wz, int& sx, int& sy) {
     sx = VIZ_CX + (int)((wx + wy * 0.45f) * VIZ_SCALE);
     sy = VIZ_CY - (int)((wz + wy * 0.25f) * VIZ_SCALE);
@@ -68,8 +66,6 @@ static void drawVizArc(float ax, float ay, float az,
 
 static void drawAngleViz(bool hasA, bool hasB) {
     Display::tft.fillRect(0, CONTENT_Y + ANGL_NUM_H, Display::SCREEN_W, ANGL_VIZ_H, Display::Colors::BG);
-
-    // Faint axis stubs
     const float AXIS_LEN = 0.42f;
     int ox, oy;
     projectViz(0, 0, 0, ox, oy);
@@ -89,22 +85,18 @@ static void drawAngleViz(bool hasA, bool hasB) {
     getBoresightWorld(wx, wy, wz);
 
     if (!hasA) {
-        // IDLE: show live vector faintly
         drawVizArrow(wx, wy, wz, Display::Colors::GREEN_DIM);
     } else if (!hasB) {
-        // A locked, B is live
         drawVizArrow(vecAx, vecAy, vecAz, Display::Colors::GREEN);
         drawVizArrow(wx, wy, wz, Display::Colors::AMBER);
         drawVizArc(vecAx, vecAy, vecAz, wx, wy, wz, Display::Colors::GREEN_DIM);
     } else {
-        // Both locked
         drawVizArrow(vecAx, vecAy, vecAz, Display::Colors::GREEN);
         drawVizArrow(vecBx, vecBy, vecBz, Display::Colors::AMBER);
         drawVizArc(vecAx, vecAy, vecAz, vecBx, vecBy, vecBz, Display::Colors::RED);
     }
 }
 
-// Number strip at top - angle + distance between points
 static void drawAngleValue(float deg, bool locked) {
     Display::spr.deleteSprite();
     Display::spr.createSprite(Display::SCREEN_W, ANGL_NUM_H);
@@ -115,13 +107,9 @@ static void drawAngleValue(float deg, bool locked) {
         Display::spr.drawCentreString("POINT AT TARGET A", 120, 28, 2);
     } else {
         uint16_t col = (angleState == ANGLE_DONE) ? Display::Colors::GREEN : Display::Colors::AMBER;
-
-        // Angle - centred, font 4
         char buf[24]; sprintf(buf, "%.1f deg", deg);
         Display::spr.setTextColor(col, Display::Colors::BG);
         Display::spr.drawCentreString(buf, 120, 6, 4);
-
-        // Distance - amber, centred below
         if (angleState == ANGLE_DONE && distA > 10.0f && distB > 10.0f) {
             float rad = deg * 3.14159f / 180.0f;
             float d = sqrtf(distA*distA + distB*distB - 2.0f*distA*distB*cosf(rad));
@@ -156,7 +144,9 @@ static void drawAngleBtn() {
     Display::tft.drawCentreString(lbl, 120, ANGL_BTN_Y + 14, 2);
 }
 
-void drawAngleTab() {
+namespace AngleTab {
+
+void drawTab() {
     Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, TAB_Y - CONTENT_Y, Display::Colors::BG);
     angleState = ANGLE_IDLE;
     prevLiveAngle = -9999.0f;
@@ -166,7 +156,7 @@ void drawAngleTab() {
     drawAngleBtn();
 }
 
-void tickAngleTab() {
+void tick() {
     if (angleState == ANGLE_DONE) return;
     if (!imuUpdate()) return;
 
@@ -185,7 +175,7 @@ void tickAngleTab() {
     drawAngleValue(disp, false);
 }
 
-void handleAngleTouch(int tx, int ty) {
+void onTouch(int tx, int ty) {
     if (!inRect(tx, ty, 20, ANGL_BTN_Y, 200, ANGL_BTN_H)) return;
 
     if (angleState == ANGLE_IDLE) {
@@ -207,6 +197,8 @@ void handleAngleTouch(int tx, int ty) {
         drawAngleValue(lockedAngle, true);
         drawAngleBtn();
     } else {
-        drawAngleTab();
+        drawTab();
     }
 }
+
+} // namespace AngleTab
