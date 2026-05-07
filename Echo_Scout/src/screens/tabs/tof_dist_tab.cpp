@@ -1,14 +1,13 @@
 #include "tabs/tof_tabs.h"
 #include "devices/touch.h"
 #include "base/measurements.h"
-using namespace TofTabs;
 
 static constexpr int DIST_BTN_X = 20;
-static constexpr int DIST_BTN_Y = TAB_Y - 44;
+static constexpr int DIST_BTN_Y = TofTabs::TAB_Y - 44;
 static constexpr int DIST_BTN_W = 200;
 static constexpr int DIST_BTN_H = 44;
 static constexpr int DIST_NUM_H = 36;
-static constexpr int DIST_VIZ_Y = CONTENT_Y + DIST_NUM_H;
+static constexpr int DIST_VIZ_Y = TofTabs::CONTENT_Y + DIST_NUM_H;
 static constexpr int DIST_VIZ_BOT = DIST_BTN_Y - 4;
 static constexpr int DIST_VIZ_H = DIST_VIZ_BOT - DIST_VIZ_Y;
 static constexpr int DIST_VIZ_CX = 120;
@@ -33,7 +32,7 @@ static void drawDistValue(float d, bool locked) {
         Display::spr.setTextColor(col, Display::Colors::BG);
         Display::spr.drawCentreString(buf, 120, 6, 4);
     }
-    Display::spr.pushSprite(0, CONTENT_Y);
+    Display::spr.pushSprite(0, TofTabs::CONTENT_Y);
     Display::spr.deleteSprite();
 }
 
@@ -87,11 +86,11 @@ static void drawDistBtn(bool locked) {
 namespace DistTab {
 
 void drawTab() {
-    Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, TAB_Y - CONTENT_Y, Display::Colors::BG);
+    Display::tft.fillRect(0, TofTabs::CONTENT_Y, Display::SCREEN_W, TofTabs::TAB_Y - TofTabs::CONTENT_Y, Display::Colors::BG);
     distState = DIST_LIVE;
     distPrevLive = -9999.0f;
     tofUpdate();
-    float d = centerDist();
+    float d = TofTabs::centerDist();
     drawDistValue(d, false);
     drawDistViz(d);
     drawDistBtn(false);
@@ -100,7 +99,7 @@ void drawTab() {
 void tick() {
     if (distState == DIST_LOCKED) return;
     if (!tofUpdate()) return;
-    float d = centerDist();
+    float d = TofTabs::centerDist();
     if (fabsf(d - distPrevLive) < 5.0f) return;
     distPrevLive = d;
     drawDistValue(d, false);
@@ -111,7 +110,7 @@ void onTouch(int tx, int ty) {
     if (!inRect(tx, ty, DIST_BTN_X, DIST_BTN_Y, DIST_BTN_W, DIST_BTN_H)) return;
     if (distState == DIST_LIVE) {
         tofUpdate();
-        distLocked = centerDist();
+        distLocked = TofTabs::centerDist();
         distState = DIST_LOCKED;
         drawDistValue(distLocked, true);
         drawDistViz(distLocked);

@@ -1,9 +1,8 @@
 #include "tabs/imu_tabs.h"
-using namespace ImuTabs;
 
 static constexpr int SCOPE_SAMPLES = 240;
 static constexpr int SCOPE_LANE_H = 78;
-static constexpr int SCOPE_Y0 = CONTENT_Y + 18;
+static constexpr int SCOPE_Y0 = ImuTabs::CONTENT_Y + 18;
 static constexpr uint32_t SCOPE_MS = 50;
 
 static float scopeBuf[3][SCOPE_SAMPLES] = {};
@@ -19,7 +18,7 @@ static int scopeToY(float val, int laneY) {
 }
 
 static void drawScopeIndicator() {
-    const int IX = 178, IY = CONTENT_Y + 4;
+    const int IX = 178, IY = ImuTabs::CONTENT_Y + 4;
     static const uint16_t cols[3] = {
         Display::Colors::GREEN, Display::Colors::AMBER, Display::Colors::GREEN_DIM
     };
@@ -62,10 +61,10 @@ static void drawScopeWave(int lane, uint16_t col) {
 namespace ScopeTab {
 
 void drawTab() {
-    Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, CONTENT_H, Display::Colors::BG);
+    Display::tft.fillRect(0, ImuTabs::CONTENT_Y, Display::SCREEN_W, ImuTabs::CONTENT_H, Display::Colors::BG);
     memset(scopeBuf, 0, sizeof(scopeBuf));
     scopeHead = 0; scopeFull = false;
-    float r, p, y; toEuler(r, p, y);
+    float r, p, y; ImuTabs::toEuler(r, p, y);
     scopeYawPrev = y;
     scopeYawAccum = 0.0f;
     drawScopeIndicator();
@@ -76,7 +75,7 @@ void tick() {
     imuUpdate();
     if (millis() - scopeLastMs < SCOPE_MS) return;
     scopeLastMs = millis();
-    float roll, pitch, yaw; toEuler(roll, pitch, yaw);
+    float roll, pitch, yaw; ImuTabs::toEuler(roll, pitch, yaw);
     float dyaw = yaw - scopeYawPrev;
     if (dyaw >  180.0f) dyaw -= 360.0f;
     if (dyaw < -180.0f) dyaw += 360.0f;

@@ -2,7 +2,6 @@
 #include "devices/imu.h"
 #include "devices/touch.h"
 #include "base/measurements.h"
-using namespace TofTabs;
 #include <math.h>
 
 enum AngleState { ANGLE_IDLE, ANGLE_A_LOCKED, ANGLE_DONE };
@@ -14,11 +13,11 @@ static float distA = 0.0f, distB = 0.0f;
 
 static constexpr int ANGL_NUM_H = 76;
 static constexpr int ANGL_BTN_H = 44;
-static constexpr int ANGL_BTN_Y = TAB_Y - ANGL_BTN_H;
-static constexpr int ANGL_VIZ_H = ANGL_BTN_Y - 2 - (CONTENT_Y + ANGL_NUM_H);
+static constexpr int ANGL_BTN_Y = TofTabs::TAB_Y - ANGL_BTN_H;
+static constexpr int ANGL_VIZ_H = ANGL_BTN_Y - 2 - (TofTabs::CONTENT_Y + ANGL_NUM_H);
 
 static constexpr int VIZ_CX = 120;
-static constexpr int VIZ_CY = CONTENT_Y + ANGL_NUM_H + ANGL_VIZ_H / 2 + 20;
+static constexpr int VIZ_CY = TofTabs::CONTENT_Y + ANGL_NUM_H + ANGL_VIZ_H / 2 + 20;
 static constexpr float VIZ_SCALE = 80.0f;
 
 static void getBoresightWorld(float& wx, float& wy, float& wz) {
@@ -66,7 +65,7 @@ static void drawVizArc(float ax, float ay, float az,
 }
 
 static void drawAngleViz(bool hasA, bool hasB) {
-    Display::tft.fillRect(0, CONTENT_Y + ANGL_NUM_H, Display::SCREEN_W, ANGL_VIZ_H, Display::Colors::BG);
+    Display::tft.fillRect(0, TofTabs::CONTENT_Y + ANGL_NUM_H, Display::SCREEN_W, ANGL_VIZ_H, Display::Colors::BG);
     const float AXIS_LEN = 0.42f;
     int ox, oy;
     projectViz(0, 0, 0, ox, oy);
@@ -128,7 +127,7 @@ static void drawAngleValue(float deg, bool locked) {
         }
     }
 
-    Display::spr.pushSprite(0, CONTENT_Y);
+    Display::spr.pushSprite(0, TofTabs::CONTENT_Y);
     Display::spr.deleteSprite();
 }
 
@@ -148,7 +147,7 @@ static void drawAngleBtn() {
 namespace AngleTab {
 
 void drawTab() {
-    Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, TAB_Y - CONTENT_Y, Display::Colors::BG);
+    Display::tft.fillRect(0, TofTabs::CONTENT_Y, Display::SCREEN_W, TofTabs::TAB_Y - TofTabs::CONTENT_Y, Display::Colors::BG);
     angleState = ANGLE_IDLE;
     prevLiveAngle = -9999.0f;
     distA = distB = 0.0f;
@@ -181,7 +180,7 @@ void onTouch(int tx, int ty) {
 
     if (angleState == ANGLE_IDLE) {
         getBoresightWorld(vecAx, vecAy, vecAz);
-        distA = centerDist();
+        distA = TofTabs::centerDist();
         distB = 0.0f;
         angleState = ANGLE_A_LOCKED;
         prevLiveAngle = -9999.0f;
@@ -190,7 +189,7 @@ void onTouch(int tx, int ty) {
         drawAngleBtn();
     } else if (angleState == ANGLE_A_LOCKED) {
         getBoresightWorld(vecBx, vecBy, vecBz);
-        distB = centerDist();
+        distB = TofTabs::centerDist();
         float dot = constrain(vecAx*vecBx + vecAy*vecBy + vecAz*vecBz, -1.0f, 1.0f);
         lockedAngle = acosf(dot) * 180.0f / 3.14159f;
         angleState = ANGLE_DONE;

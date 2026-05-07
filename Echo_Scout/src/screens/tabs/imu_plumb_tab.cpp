@@ -1,7 +1,6 @@
 #include "tabs/imu_tabs.h"
 #include "devices/device_icons.h"
 #include "base/measurements.h"
-using namespace ImuTabs;
 
 static constexpr int PLUMB_AX = 120, PLUMB_AY = 60, PLUMB_LEN = 150;
 static float prevPbOx = -9999;
@@ -31,21 +30,21 @@ static void drawPlumbBob(float ox) {
 namespace PlumbTab {
 
 void drawTab() {
-    Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, CONTENT_H, Display::Colors::BG);
+    Display::tft.fillRect(0, ImuTabs::CONTENT_Y, Display::SCREEN_W, ImuTabs::CONTENT_H, Display::Colors::BG);
     prevPbOx = -9999;
 
     int gx = PLUMB_AX, gy = PLUMB_AY + PLUMB_LEN;
     Display::tft.drawFastHLine(gx-18, gy, 36, Display::Colors::GREEN_FAINT);
     Display::tft.drawFastVLine(gx, gy-18, 36, Display::Colors::GREEN_FAINT);
     Display::tft.fillCircle(PLUMB_AX, PLUMB_AY, 4, Display::Colors::GREEN_DIM);
-    drawIconFrontHoriz(200, CONTENT_Y + 34);
+    drawIconFrontHoriz(200, ImuTabs::CONTENT_Y + 34);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawCentreString("DEVIATION", 120, 262, 1);
 }
 
 void tick() {
     if (!imuUpdate()) return;
-    float roll, pitch, yaw; toEuler(roll, pitch, yaw);
+    float roll, pitch, yaw; ImuTabs::toEuler(roll, pitch, yaw);
     float ox = sinf(roll * PI/180.0f) * PLUMB_LEN;
     if (ox*ox > (float)(PLUMB_LEN*PLUMB_LEN)) ox = copysignf(PLUMB_LEN-1, ox);
     if (fabsf(ox - prevPbOx) < 1.0f) return;
@@ -65,7 +64,7 @@ void tick() {
 
     prevPbOx = ox;
     drawPlumbBob(ox);
-    drawIconFrontHoriz(200, CONTENT_Y + 34);
+    drawIconFrontHoriz(200, ImuTabs::CONTENT_Y + 34);
     Display::tft.fillCircle(PLUMB_AX, PLUMB_AY, 4, Display::Colors::GREEN_DIM);
     float dev = fabsf(atan2f(ox, sqrtf((float)(PLUMB_LEN*PLUMB_LEN)-ox*ox))) * 180.0f/PI;
     char buf[16]; Measurements::fmtAngle(dev, buf, 16);

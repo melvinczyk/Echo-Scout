@@ -1,6 +1,5 @@
 #include "tabs/imu_tabs.h"
 #include "screens/imu_screen.h"
-using namespace ImuTabs;
 
 static const float cubeVerts[8][3] = {
     {-1,-1,-1},{1,-1,-1},{1,1,-1},{-1,1,-1},
@@ -27,7 +26,7 @@ static void project(float x,float y,float z,int& sx,int& sy) {
     sx = ImuScreen::CUBE_CX+(int)(x*ImuScreen::CUBE_SIZE*s);
     sy = ImuScreen::CUBE_CY+(int)(-y*ImuScreen::CUBE_SIZE*s);
     sx = constrain(sx, 2, Display::SCREEN_W-2);
-    sy = constrain(sy, CONTENT_Y+2, ImuScreen::CUBE_YMAX);
+    sy = constrain(sy, ImuTabs::CONTENT_Y+2, ImuScreen::CUBE_YMAX);
 }
 static void drawThickLine(int x0,int y0,int x1,int y1,uint16_t col) {
     Display::tft.drawLine(x0,y0,x1,y1,col);
@@ -59,8 +58,8 @@ static void drawCubeEdges(uint16_t col) {
 }
 static void eraseCube() {
     if (!cubeDrawn) return;
-    Display::tft.fillRect(2, CONTENT_Y+2, Display::SCREEN_W-4,
-                          ImuScreen::CUBE_YMAX-CONTENT_Y-2, Display::Colors::BG);
+    Display::tft.fillRect(2, ImuTabs::CONTENT_Y+2, Display::SCREEN_W-4,
+                          ImuScreen::CUBE_YMAX-ImuTabs::CONTENT_Y-2, Display::Colors::BG);
 }
 static void updateEulerRow(float roll, float pitch, float yaw) {
     bool changed = fabsf(roll-prevRoll)>0.5f || fabsf(pitch-prevPitch)>0.5f || fabsf(yaw-prevYaw)>0.5f;
@@ -82,7 +81,7 @@ static void updateEulerRow(float roll, float pitch, float yaw) {
 namespace CubeTab {
 
 void drawTab() {
-    Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, CONTENT_H, Display::Colors::BG);
+    Display::tft.fillRect(0, ImuTabs::CONTENT_Y, Display::SCREEN_W, ImuTabs::CONTENT_H, Display::Colors::BG);
     cubeDrawn = false; prevRoll=prevPitch=prevYaw=-9999;
     Display::tft.drawFastHLine(0, 250, Display::SCREEN_W, Display::Colors::GREEN_FAINT);
     Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
@@ -97,7 +96,7 @@ void tick() {
     eraseCube();
     drawCubeEdges(Display::Colors::GREEN);
     cubeDrawn = true;
-    float roll, pitch, yaw; toEuler(roll, pitch, yaw);
+    float roll, pitch, yaw; ImuTabs::toEuler(roll, pitch, yaw);
     updateEulerRow(roll, pitch, yaw);
 }
 
