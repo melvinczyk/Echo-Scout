@@ -11,7 +11,7 @@
 #include "imu_screen.h"
 #include "battery_screen.h"
 #include "power_screen.h"
-#include "spirit_screen.h"
+#include "calibrate_screen.h"
 #include "tof_screen.h"
 #include <esp_sleep.h>
 
@@ -23,7 +23,6 @@ static void menuOnTouch(int tx, int ty) {
         ScreenManager::switchScreen(Display::Screen::RADAR);
     } else if (inRect(tx, ty, MenuScreen::MAP_X, MenuScreen::MAP_Y,
                                MenuScreen::MAP_W, MenuScreen::MAP_H)) {
-        // 3D MAP — routes to TOF screen (MAP tab coming soon)
         ScreenManager::switchScreen(Display::Screen::TOF);
     } else if (inRect(tx, ty, MenuScreen::SCANNER_X, MenuScreen::SCANNER_Y,
                                MenuScreen::SCANNER_W, MenuScreen::SCANNER_H)) {
@@ -31,13 +30,13 @@ static void menuOnTouch(int tx, int ty) {
     } else if (inRect(tx, ty, MenuScreen::ATTITUDE_X, MenuScreen::ATTITUDE_Y,
                                MenuScreen::ATTITUDE_W, MenuScreen::ATTITUDE_H)) {
         ScreenManager::switchScreen(Display::Screen::IMU);
-    } else if (inRect(tx, ty, MenuScreen::BATTERY_X, MenuScreen::BATTERY_Y,
-                               MenuScreen::BATTERY_W, MenuScreen::BATTERY_H)) {
-        ScreenManager::switchScreen(Display::Screen::BATTERY);
     } else if (inRect(tx, ty, MenuScreen::SETTINGS_X, MenuScreen::SETTINGS_Y,
                                MenuScreen::SETTINGS_W, MenuScreen::SETTINGS_BH)) {
         settingsScrollY = 0;
         ScreenManager::switchScreen(Display::Screen::SETTINGS);
+    } else if (inRect(tx, ty, MenuScreen::BATTERY_X, MenuScreen::BATTERY_Y,
+                               MenuScreen::BATTERY_W, MenuScreen::BATTERY_H)) {
+        ScreenManager::switchScreen(Display::Screen::BATTERY);
     } else if (inRect(tx, ty, MenuScreen::POWER_X, MenuScreen::POWER_Y,
                                MenuScreen::POWER_W, MenuScreen::POWER_H)) {
         ScreenManager::switchScreen(Display::Screen::POWER_CONFIRM);
@@ -45,9 +44,11 @@ static void menuOnTouch(int tx, int ty) {
 }
 
 static void powerOnTouch(int tx, int ty) {
-    if (inRect(tx, ty, 20, 180, 200, 44))
+    if (inRect(tx, ty, 20, 148, 200, 44))
+        executeRestart();
+    else if (inRect(tx, ty, 20, 204, 200, 44))
         executePowerOff();
-    else if (inRect(tx, ty, 20, 236, 200, 44))
+    else if (inRect(tx, ty, 20, 260, 200, 44))
         ScreenManager::switchScreen(Display::Screen::MENU);
 }
 
@@ -137,8 +138,8 @@ void ScreenManager::handleTouch() {
             switchScreen(Display::Screen::MENU);
         } else if (AppState::currentScreen != Display::Screen::MENU &&
                    AppState::currentScreen != Display::Screen::POWER_CONFIRM &&
-                   AppState::currentScreen != Display::SPIRIT &&
-                   inRect(tx, ty, Display::CAL_BTN_X, Display::CAL_BTN_Y, Display::CAL_BTN_W, Display::CAL_BTN_H)){
+                   AppState::currentScreen != Display::Screen::SPIRIT &&
+                   inRect(tx, ty, Display::CAL_BTN_X, Display::CAL_BTN_Y, Display::CAL_BTN_W, Display::CAL_BTN_H)) {
             switchScreen(Display::Screen::SPIRIT);
         }
         else {

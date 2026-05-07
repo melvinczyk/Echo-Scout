@@ -145,14 +145,6 @@ static void drawMapButton() {
     Display::tft.drawCentreString("[ 3D MAP ]", 120, by + bh/2 - 8, 2);
 }
 
-static void drawCalHeader() {
-    Display::tft.drawRoundRect(MenuScreen::CAL_X, MenuScreen::CAL_Y,
-                               MenuScreen::CAL_W, MenuScreen::CAL_H,
-                               3, Display::Colors::GREEN_DIM);
-    Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("CAL", MenuScreen::CAL_X + MenuScreen::CAL_W / 2,
-                                  MenuScreen::CAL_Y + 4, 2);
-}
 
 void drawPowerButton() {
     constexpr int bx = MenuScreen::POWER_X, by = MenuScreen::POWER_Y,
@@ -180,14 +172,13 @@ void startMenu() {
     Display::drawAsciiArt(echo, Display::Colors::GREEN);
     Display::drawAsciiArt(scout, Display::Colors::GREEN_FAINT);
     drawStatusBar();
-    drawCalHeader();
 
-    // Section separators
-    Display::tft.drawFastHLine(8, 158, 224, Display::Colors::SEP);  // above RADAR
-    Display::tft.drawFastHLine(8, 202, 224, Display::Colors::SEP);  // between RADAR / MAP
-    Display::tft.drawFastHLine(8, 232, 224, Display::Colors::SEP);  // above tools
-    Display::tft.drawFastHLine(8, 260, 224, Display::Colors::SEP);  // above settings/battery
-    Display::tft.drawFastHLine(8, 294, 224, Display::Colors::SEP);  // above power zone
+    // Section separators (aligned to button Y positions)
+    Display::tft.drawFastHLine(8, 158, 224, Display::Colors::SEP);  // above RADAR (160)
+    Display::tft.drawFastHLine(8, 204, 224, Display::Colors::SEP);  // RADAR/MAP gap
+    Display::tft.drawFastHLine(8, 236, 224, Display::Colors::SEP);  // above tools (238)
+    Display::tft.drawFastHLine(8, 264, 224, Display::Colors::SEP);  // above settings/battery (266)
+    Display::tft.drawFastHLine(8, 290, 224, Display::Colors::SEP);  // above power zone
     Display::tft.drawFastHLine(8, 300, 224, Display::Colors::SEP);  // power divider
 
     drawLaunchButton(true);

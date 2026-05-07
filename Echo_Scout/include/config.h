@@ -26,7 +26,7 @@ namespace Config {
     constexpr uint8_t BL_PWM_CH = 0;
     constexpr uint32_t BL_PWM_FREQ = 20000;
     constexpr uint8_t BL_PWM_RES = 8;
-    constexpr uint8_t WAKE_PIN = 0;
+    constexpr uint8_t WAKE_PIN = TOUCH_INT;  // GPIO17 — touch INT pulls low on tap
 
     // Battery
     constexpr uint8_t BAT_ADC_PIN = 9;

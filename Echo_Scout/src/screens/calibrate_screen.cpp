@@ -1,7 +1,8 @@
 #include <math.h>
-#include "spirit_screen.h"
+#include "calibrate_screen.h"
 #include "imu.h"
 #include "display.h"
+#include "touch.h"
 #include "device_state.h"
 
 static const int CX          = SpiritScreen::CX;
@@ -80,55 +81,49 @@ static void drawBall(int bsx, int bsy, bool isLevel) {
     Display::tft.drawCircle(bsx, bsy, BALL_RADIUS, Display::Colors::BG);
 }
 
-// ── calibrate button ──────────────────────────────────────────────────────────
-// Shown in the top-right header area. Active (green) only when ball is centred.
-// x=162..237, y=4..22
-
-static bool  spiritLevel  = false;  // current level state (used by touch handler)
-static bool  calFlash     = false;  // show "CAL OK" briefly after calibration
+static bool  spiritLevel  = false;
+static bool  calFlash     = false;
 static unsigned long calFlashMs = 0;
 
-static void drawCalButton(bool isLevel) {
-    const int BX = 162, BY = 4, BW = 76, BH = 18;
+// Equal-width bottom buttons
+static constexpr int CAL_BTN_X = 8,   CAL_BTN_Y = 298, CAL_BTN_W = 110, CAL_BTN_H = 18;
+static constexpr int RST_BTN_X = 122, RST_BTN_Y = 298, RST_BTN_W = 110, RST_BTN_H = 18;
 
-    // If cal flash is active, show CAL OK for 1.5 s then clear
-    if (calFlash) {
-        if (millis() - calFlashMs < 1500) {
-            Display::tft.fillRect(BX, BY, BW, BH, Display::Colors::BG);
-            Display::tft.drawRect(BX, BY, BW, BH, Display::Colors::GREEN);
-            Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-            Display::tft.drawCentreString("CAL OK", BX + BW/2, BY + 5, 1);
-            return;
-        }
-        calFlash = false;
-    }
-
-    Display::tft.fillRect(BX, BY, BW, BH, Display::Colors::BG);
-    if (isLevel) {
-        Display::tft.drawRect(BX, BY, BW, BH, Display::Colors::GREEN);
-        Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-        Display::tft.drawCentreString("CALIBRATE", BX + BW/2, BY + 5, 1);
-    } else {
-        Display::tft.drawRect(BX, BY, BW, BH, Display::Colors::GREEN_DIM);
-        Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-        Display::tft.drawCentreString("CALIBRATE", BX + BW/2, BY + 5, 1);
-    }
+static void drawBottomButtons() {
+    // CALIBRATE — shows "CAL OK" briefly after calibration
+    Display::tft.fillRect(CAL_BTN_X, CAL_BTN_Y, CAL_BTN_W, CAL_BTN_H, Display::Colors::BG);
+    bool flash = calFlash && (millis() - calFlashMs < 1500);
+    if (!flash) calFlash = false;
+    Display::tft.drawRect(CAL_BTN_X, CAL_BTN_Y, CAL_BTN_W, CAL_BTN_H, Display::Colors::GREEN);
+    Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+    Display::tft.drawCentreString(flash ? "CAL OK" : "CALIBRATE",
+                                  CAL_BTN_X + CAL_BTN_W/2, CAL_BTN_Y + 4, 1);
+    // RESET
+    Display::tft.fillRect(RST_BTN_X, RST_BTN_Y, RST_BTN_W, RST_BTN_H, Display::Colors::BG);
+    Display::tft.drawRect(RST_BTN_X, RST_BTN_Y, RST_BTN_W, RST_BTN_H, Display::Colors::RED);
+    Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
+    Display::tft.drawCentreString("RESET CAL", RST_BTN_X + RST_BTN_W/2, RST_BTN_Y + 4, 1);
 }
 
 void handleSpiritTouch(int tx, int ty) {
-    // Only calibrate if ball is centred (level) and touch is in button area
-    if (!spiritLevel) return;
-    if (tx < 162 || tx > 238 || ty < 4 || ty > 22) return;
-
-    // Capture the raw (pre-calibration) quaternion as the new reference
-    ImuState::calR = ImuState::rawQR;
-    ImuState::calI = ImuState::rawQI;
-    ImuState::calJ = ImuState::rawQJ;
-    ImuState::calK = ImuState::rawQK;
-    ImuState::calibrated = true;
-
-    calFlash   = true;
-    calFlashMs = millis();
+    if (inRect(tx, ty, CAL_BTN_X, CAL_BTN_Y, CAL_BTN_W, CAL_BTN_H)) {
+        ImuState::calR = ImuState::rawQR;
+        ImuState::calI = ImuState::rawQI;
+        ImuState::calJ = ImuState::rawQJ;
+        ImuState::calK = ImuState::rawQK;
+        ImuState::calibrated = true;
+        calFlash   = true;
+        calFlashMs = millis();
+        drawBottomButtons();
+        return;
+    }
+    if (inRect(tx, ty, RST_BTN_X, RST_BTN_Y, RST_BTN_W, RST_BTN_H)) {
+        ImuState::calR = 1.0f; ImuState::calI = 0.0f;
+        ImuState::calJ = 0.0f; ImuState::calK = 0.0f;
+        ImuState::calibrated = false;
+        calFlash = false;
+        drawBottomButtons();
+    }
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -139,13 +134,13 @@ static bool  prevLevelS = false;
 static void drawReadout(float roll, float pitch, bool isLevel) {
     bool changed = fabsf(roll  - prevRollS)  > 0.3f ||
                    fabsf(pitch - prevPitchS) > 0.3f ||
-                   isLevel != prevLevelS || calFlash;
+                   isLevel != prevLevelS;
     if (!changed) return;
     prevRollS = pitch; prevPitchS = roll; prevLevelS = isLevel;
 
     int y = SpiritScreen::DASH_Y;
-    int cardW = 112, pad = 4, valY = y + 18;
-    Display::tft.fillRect(pad + 1, valY - 1, 2*cardW + pad - 2, 22, Display::Colors::BG);
+    int cardW = 112, pad = 4, valY = y + 16;
+    Display::tft.fillRect(pad + 1, valY - 1, 2*cardW + pad - 2, 18, Display::Colors::BG);
 
     char buf[12];
     sprintf(buf, "%+.1f", roll);
@@ -156,7 +151,7 @@ static void drawReadout(float roll, float pitch, bool isLevel) {
     Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
     Display::tft.drawCentreString(buf, pad + cardW + pad + cardW/2, valY, 2);
 
-    drawCalButton(isLevel);
+    drawBottomButtons();
 }
 
 // ── public API ────────────────────────────────────────────────────────────────
@@ -169,16 +164,16 @@ void drawSpiritBase() {
     prevRollS = -9999; prevPitchS = -9999; prevLevelS = false;
     calFlash  = false; spiritLevel = false;
 
-    Display::drawHeader("SPIRIT");
-    drawCalButton(false);
+    Display::drawHeader("CALIBRATE");
 
     Display::tft.drawFastHLine(0, SpiritScreen::DASH_Y, Display::SCREEN_W, Display::Colors::SEP);
     int cardW = 112, pad = 4, y = SpiritScreen::DASH_Y;
-    Display::tft.drawRect(pad,               y + 2, cardW, 52, Display::Colors::GREEN_DIM);
-    Display::tft.drawRect(pad + cardW + pad, y + 2, cardW, 52, Display::Colors::GREEN_DIM);
+    Display::tft.drawRect(pad,               y + 2, cardW, 38, Display::Colors::GREEN_DIM);
+    Display::tft.drawRect(pad + cardW + pad, y + 2, cardW, 38, Display::Colors::GREEN_DIM);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawCentreString("X-TILT", pad + cardW/2,               y + 5, 1);
     Display::tft.drawCentreString("Y-TILT", pad + cardW + pad + cardW/2, y + 5, 1);
+    drawBottomButtons();
 
     if (!ImuState::ready) {
         Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
@@ -192,28 +187,6 @@ void drawSpiritBase() {
     ballDrawn = true;
 }
 
-static void drawPlumbIndicator() {
-  // Portrait device outline — right side of content, above crosshair
-  const int IX = 188, IY = Display::HEADER_H + 8;
-  const int IW = 26, IH = 36;
-  Display::tft.fillRect(IX - 2, IY - 10, IW + 4, IH + 14, Display::Colors::BG);
-  Display::tft.drawRect(IX, IY, IW, IH, Display::Colors::GREEN_DIM);
-  // Top edge bright = pivot edge (hold this end UP)
-  Display::tft.drawFastHLine(IX + 2, IY, IW - 4, Display::Colors::GREEN);
-  // Up-arrow above the top edge (▲)
-  int ax = IX + IW / 2, ay = IY - 2;
-  Display::tft.drawLine(ax, ay - 5, ax - 4, ay, Display::Colors::GREEN);
-  Display::tft.drawLine(ax, ay - 5, ax + 4, ay, Display::Colors::GREEN);
-  Display::tft.drawFastVLine(ax, ay - 5, 5, Display::Colors::GREEN);
-  // Pivot dot at top-centre of device
-  Display::tft.fillCircle(ax, IY, 2, Display::Colors::GREEN);
-  // Dashed plumb reference (straight down from pivot)
-  for (int d = 4; d < IH - 4; d += 5) {
-    Display::tft.drawPixel(ax, IY + d, Display::Colors::GREEN_FAINT);
-  }
-  // Bob dot at rest (centre-bottom)
-  Display::tft.fillCircle(ax, IY + IH - 6, 4, Display::Colors::GREEN_DIM);
-}
 
 void tickSpirit() {
     if (!imuUpdate()) return;
@@ -264,6 +237,5 @@ void tickSpirit() {
     drawBall(newBx, newBy, isLevel);
     ballDrawn = true;
 
-    drawPlumbIndicator();
     drawReadout(tiltX, tiltY, isLevel);
 }

@@ -5,6 +5,7 @@
 #include "display.h"
 #include "touch.h"
 #include "device_state.h"
+#include "device_icons.h"
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 static constexpr int TAB_Y     = 280;
@@ -82,17 +83,27 @@ static void tickGridTab() {
     if (fabsf(avg-prevAvg)>5.0f) { drawAvgBar(avg); prevAvg=avg; }
 }
 
+static float centerDist();  // forward declaration — defined in DIST TAB section
+
 // ── ANGLE TAB ─────────────────────────────────────────────────────────────────
 enum AngleState { ANGLE_IDLE, ANGLE_A_LOCKED, ANGLE_DONE };
 static AngleState angleState = ANGLE_IDLE;
 static float vecAx, vecAy, vecAz, vecBx, vecBy, vecBz;
 static float lockedAngle  = 0.0f;
 static float prevLiveAngle = -9999.0f;
+static float distA = 0.0f, distB = 0.0f;  // ToF distances at lock points (mm)
 
-// All angle-tab drawing goes through a fixed sprite region to avoid ghost pixels.
-static constexpr int ANGL_CONTENT_H = 190;   // area above the button
-static constexpr int ANGL_BTN_Y     = CONTENT_Y + ANGL_CONTENT_H + 4;
-static constexpr int ANGL_BTN_H     = 44;
+// Layout: 76px number strip at top + viz filling rest down to button
+static constexpr int ANGL_NUM_H    = 76;
+static constexpr int ANGL_BTN_H    = 44;
+static constexpr int ANGL_BTN_Y    = TAB_Y - ANGL_BTN_H;          // 236
+static constexpr int ANGL_VIZ_H    = ANGL_BTN_Y - 2 - (CONTENT_Y + ANGL_NUM_H); // 130
+static constexpr int ANGL_CONTENT_H = ANGL_NUM_H + ANGL_VIZ_H;
+
+// Viz centre — pushed lower by the taller number strip
+static constexpr int   VIZ_CX    = 120;
+static constexpr int   VIZ_CY    = CONTENT_Y + ANGL_NUM_H + ANGL_VIZ_H / 2 + 20;  // 169
+static constexpr float VIZ_SCALE = 80.0f;
 
 static void getBoresightWorld(float& wx, float& wy, float& wz) {
     float r=ImuState::qR, i=ImuState::qI, j=ImuState::qJ, k=ImuState::qK;
@@ -103,33 +114,113 @@ static void getBoresightWorld(float& wx, float& wy, float& wz) {
     if (mag>0.001f) { wx/=mag; wy/=mag; wz/=mag; }
 }
 
-// Redraws only the value area (sprite → no flicker, no ghost pixels)
+// Cabinet projection: Y axis goes into the screen (depth cue)
+static void projectViz(float wx, float wy, float wz, int& sx, int& sy) {
+    sx = VIZ_CX + (int)((wx + wy * 0.45f) * VIZ_SCALE);
+    sy = VIZ_CY - (int)((wz + wy * 0.25f) * VIZ_SCALE);
+}
+
+static void drawVizArrow(float vx, float vy, float vz, uint16_t col) {
+    int ox, oy, ex, ey;
+    projectViz(0, 0, 0, ox, oy);
+    projectViz(vx, vy, vz, ex, ey);
+    Display::tft.drawLine(ox, oy, ex, ey, col);
+    Display::tft.fillCircle(ex, ey, 3, col);
+}
+
+static void drawVizArc(float ax, float ay, float az,
+                       float bx, float by, float bz, uint16_t col) {
+    float dot = constrain(ax*bx + ay*by + az*bz, -1.0f, 1.0f);
+    float omega = acosf(dot);
+    if (omega < 0.01f) return;
+    float sinOm = sinf(omega);
+    const int STEPS = 18;
+    const float ARC_R = 0.55f;
+    int prevsx = 0, prevsy = 0;
+    for (int i = 0; i <= STEPS; i++) {
+        float t  = (float)i / STEPS;
+        float s0 = sinf((1.0f - t) * omega) / sinOm;
+        float s1 = sinf(t * omega) / sinOm;
+        float nx = (ax * s0 + bx * s1) * ARC_R;
+        float ny = (ay * s0 + by * s1) * ARC_R;
+        float nz = (az * s0 + bz * s1) * ARC_R;
+        int sx, sy; projectViz(nx, ny, nz, sx, sy);
+        if (i > 0) Display::tft.drawLine(prevsx, prevsy, sx, sy, col);
+        prevsx = sx; prevsy = sy;
+    }
+}
+
+static void drawAngleViz(bool hasA, bool hasB) {
+    Display::tft.fillRect(0, CONTENT_Y + ANGL_NUM_H, Display::SCREEN_W, ANGL_VIZ_H, Display::Colors::BG);
+
+    // Faint axis stubs
+    const float AXIS_LEN = 0.42f;
+    int ox, oy;
+    projectViz(0, 0, 0, ox, oy);
+    int ex, ey;
+    projectViz(AXIS_LEN, 0, 0, ex, ey);
+    Display::tft.drawLine(ox, oy, ex, ey, Display::Colors::GREEN_FAINT);
+    Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
+    Display::tft.drawString("X", ex + 2, ey - 4, 1);
+    projectViz(0, AXIS_LEN, 0, ex, ey);
+    Display::tft.drawLine(ox, oy, ex, ey, Display::Colors::GREEN_FAINT);
+    Display::tft.drawString("Y", ex + 2, ey - 4, 1);
+    projectViz(0, 0, AXIS_LEN, ex, ey);
+    Display::tft.drawLine(ox, oy, ex, ey, Display::Colors::GREEN_FAINT);
+    Display::tft.drawString("Z", ex + 2, ey - 4, 1);
+
+    float wx, wy, wz;
+    getBoresightWorld(wx, wy, wz);
+
+    if (!hasA) {
+        // IDLE: show live vector faintly
+        drawVizArrow(wx, wy, wz, Display::Colors::GREEN_DIM);
+    } else if (!hasB) {
+        // A locked, B is live
+        drawVizArrow(vecAx, vecAy, vecAz, Display::Colors::GREEN);
+        drawVizArrow(wx, wy, wz, Display::Colors::AMBER);
+        drawVizArc(vecAx, vecAy, vecAz, wx, wy, wz, Display::Colors::GREEN_DIM);
+    } else {
+        // Both locked
+        drawVizArrow(vecAx, vecAy, vecAz, Display::Colors::GREEN);
+        drawVizArrow(vecBx, vecBy, vecBz, Display::Colors::AMBER);
+        drawVizArc(vecAx, vecAy, vecAz, vecBx, vecBy, vecBz, Display::Colors::RED);
+    }
+}
+
+// Number strip at top — angle + distance between points
 static void drawAngleValue(float deg, bool locked) {
     Display::spr.deleteSprite();
-    Display::spr.createSprite(Display::SCREEN_W, ANGL_CONTENT_H);
+    Display::spr.createSprite(Display::SCREEN_W, ANGL_NUM_H);
     Display::spr.fillSprite(Display::Colors::BG);
 
     if (angleState == ANGLE_IDLE) {
         Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-        Display::spr.drawCentreString("POINT AT TARGET A", 120, 60, 2);
-        Display::spr.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
-        Display::spr.drawCentreString("then tap LOCK A", 120, 90, 1);
-    } else if (angleState == ANGLE_A_LOCKED) {
-        Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-        Display::spr.drawCentreString("A LOCKED — POINT AT B", 120, 8, 1);
-        char buf[16]; sprintf(buf, "%.1f", deg);
-        Display::spr.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
-        Display::spr.drawCentreString(buf, 120, 30, 7);
-        Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-        Display::spr.drawCentreString("deg", 120, 148, 2);
-    } else { // DONE
-        Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-        Display::spr.drawCentreString("ANGLE BETWEEN A & B", 120, 8, 1);
-        char buf[16]; sprintf(buf, "%.1f", deg);
-        Display::spr.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-        Display::spr.drawCentreString(buf, 120, 30, 7);
-        Display::spr.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-        Display::spr.drawCentreString("deg", 120, 148, 2);
+        Display::spr.drawCentreString("POINT AT TARGET A", 120, 28, 2);
+    } else {
+        uint16_t col = (angleState == ANGLE_DONE) ? Display::Colors::GREEN : Display::Colors::AMBER;
+
+        // Angle — centred, font 4
+        char buf[24]; sprintf(buf, "%.1f deg", deg);
+        Display::spr.setTextColor(col, Display::Colors::BG);
+        Display::spr.drawCentreString(buf, 120, 6, 4);
+
+        // Distance — amber, centred below
+        if (angleState == ANGLE_DONE && distA > 10.0f && distB > 10.0f) {
+            float rad = deg * 3.14159f / 180.0f;
+            float d = sqrtf(distA*distA + distB*distB - 2.0f*distA*distB*cosf(rad));
+            char dbuf[24];
+            if (d < 1000.0f) sprintf(dbuf, "DIST  %.0f mm", d);
+            else              sprintf(dbuf, "DIST  %.2f m",  d / 1000.0f);
+            Display::spr.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
+            Display::spr.drawCentreString(dbuf, 120, 46, 2);
+        } else if (angleState == ANGLE_A_LOCKED && distA > 10.0f) {
+            char dbuf[24];
+            if (distA < 1000.0f) sprintf(dbuf, "A: %.0f mm", distA);
+            else                  sprintf(dbuf, "A: %.2f m",  distA / 1000.0f);
+            Display::spr.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
+            Display::spr.drawCentreString(dbuf, 120, 46, 2);
+        }
     }
 
     Display::spr.pushSprite(0, CONTENT_Y);
@@ -153,6 +244,8 @@ static void drawAngleTab() {
     Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, TAB_Y - CONTENT_Y, Display::Colors::BG);
     angleState    = ANGLE_IDLE;
     prevLiveAngle = -9999.0f;
+    distA = distB = 0.0f;
+    drawAngleViz(false, false);
     drawAngleValue(0.0f, false);
     drawAngleBtn();
 }
@@ -172,6 +265,7 @@ static void tickAngleTab() {
 
     if (fabsf(disp - prevLiveAngle) < 0.15f) return;
     prevLiveAngle = disp;
+    drawAngleViz(angleState == ANGLE_A_LOCKED, false);
     drawAngleValue(disp, false);
 }
 
@@ -180,15 +274,20 @@ static void handleAngleTouch(int tx, int ty) {
 
     if (angleState == ANGLE_IDLE) {
         getBoresightWorld(vecAx, vecAy, vecAz);
+        distA = centerDist();
+        distB = 0.0f;
         angleState    = ANGLE_A_LOCKED;
         prevLiveAngle = -9999.0f;
+        drawAngleViz(true, false);
         drawAngleValue(0.0f, false);
         drawAngleBtn();
     } else if (angleState == ANGLE_A_LOCKED) {
         getBoresightWorld(vecBx, vecBy, vecBz);
+        distB = centerDist();
         float dot  = constrain(vecAx*vecBx + vecAy*vecBy + vecAz*vecBz, -1.0f, 1.0f);
         lockedAngle = acosf(dot) * 180.0f / 3.14159f;
         angleState  = ANGLE_DONE;
+        drawAngleViz(true, true);
         drawAngleValue(lockedAngle, true);
         drawAngleBtn();
     } else {
@@ -200,7 +299,13 @@ static void handleAngleTouch(int tx, int ty) {
 // Zones 27,28,35,36 are the inner 2×2 of the 8×8 grid (rows 3-4, cols 3-4).
 
 static constexpr int DIST_CENTER_ZONES[4] = { 27, 28, 35, 36 };
-static constexpr int DIST_BTN_X = 20, DIST_BTN_Y = 220, DIST_BTN_W = 200, DIST_BTN_H = 44;
+static constexpr int DIST_BTN_X = 20, DIST_BTN_Y = TAB_Y - 44, DIST_BTN_W = 200, DIST_BTN_H = 44;
+static constexpr int DIST_NUM_H = 36;                              // number strip height
+static constexpr int DIST_VIZ_Y = CONTENT_Y + DIST_NUM_H;         // 64
+static constexpr int DIST_VIZ_BOT = DIST_BTN_Y - 4;               // just above button
+static constexpr int DIST_VIZ_H = DIST_VIZ_BOT - DIST_VIZ_Y;     // ~168px
+static constexpr int DIST_VIZ_CX = 120;
+static constexpr float DIST_VIZ_MAX = 4000.0f;                    // 4 m max display range
 
 enum DistState { DIST_LIVE, DIST_LOCKED };
 static DistState distState = DIST_LIVE;
@@ -209,52 +314,73 @@ static float     distPrevLive = -9999.0f;
 
 // Average the 4 center zones; returns 0 if all invalid
 static float centerDist() {
-    float sum = 0.0f; int valid = 0;
-    for (int z : DIST_CENTER_ZONES) {
-        float d = TofState::distances[z];
-        if (d > 10.0f) { sum += d; valid++; }
-    }
-    return valid > 0 ? sum / valid : 0.0f;
+    // Single cell closest to grid centre — zone 27 = row 3, col 3 (0-indexed)
+    float d = TofState::distances[27];
+    return d > 10.0f ? d : 0.0f;
 }
 
+// Number strip sprite at top
 static void drawDistValue(float d, bool locked) {
-    // Clear value area
-    Display::tft.fillRect(0, CONTENT_Y + 30, Display::SCREEN_W, 170, Display::Colors::BG);
-
     uint16_t col = locked ? Display::Colors::AMBER : Display::Colors::GREEN;
-
+    Display::spr.deleteSprite();
+    Display::spr.createSprite(Display::SCREEN_W, DIST_NUM_H);
+    Display::spr.fillSprite(Display::Colors::BG);
     if (d <= 0.0f) {
-        Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
-        Display::tft.drawCentreString("NO READING", 120, CONTENT_Y + 100, 2);
-        return;
-    }
-
-    char mainBuf[16], unitBuf[8];
-    if (d < 1000.0f) {
-        sprintf(mainBuf, "%.0f", d);
-        strcpy(unitBuf, "mm");
+        Display::spr.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
+        Display::spr.drawCentreString("NO READING", 120, 10, 2);
     } else {
-        sprintf(mainBuf, "%.2f", d / 1000.0f);
-        strcpy(unitBuf, "m");
+        char buf[24];
+        if (d < 1000.0f) sprintf(buf, "%.0f mm", d);
+        else              sprintf(buf, "%.3f m",  d / 1000.0f);
+        Display::spr.setTextColor(col, Display::Colors::BG);
+        Display::spr.drawCentreString(buf, 120, 6, 4);
+    }
+    Display::spr.pushSprite(0, CONTENT_Y);
+    Display::spr.deleteSprite();
+}
+
+// 3D perspective rangefinder visualization
+static void drawDistViz(float d) {
+    Display::tft.fillRect(0, DIST_VIZ_Y, Display::SCREEN_W, DIST_VIZ_H, Display::Colors::BG);
+
+    int devY  = DIST_VIZ_BOT;   // device at bottom
+    int topY  = DIST_VIZ_Y;
+    int spread = 52;             // half-width of frustum at max range
+
+    // Perspective guide lines
+    Display::tft.drawLine(DIST_VIZ_CX, devY, DIST_VIZ_CX - spread, topY, Display::Colors::GREEN_FAINT);
+    Display::tft.drawLine(DIST_VIZ_CX, devY, DIST_VIZ_CX + spread, topY, Display::Colors::GREEN_FAINT);
+    // Centre beam
+    Display::tft.drawFastVLine(DIST_VIZ_CX, topY, DIST_VIZ_H, Display::Colors::GREEN_FAINT);
+
+    // Scale rings every 500 mm
+    for (float r = 500.0f; r <= DIST_VIZ_MAX + 1.0f; r += 500.0f) {
+        float t = r / DIST_VIZ_MAX;
+        int sy  = devY - (int)(t * DIST_VIZ_H);
+        int sw  = (int)(spread * t);
+        Display::tft.drawFastHLine(DIST_VIZ_CX - sw, sy, sw * 2 + 1, Display::Colors::GREEN_FAINT);
+        char lbuf[8];
+        if (r < 1000.0f) sprintf(lbuf, "%.0fmm", r);
+        else              sprintf(lbuf, "%.0fm",  r / 1000.0f);
+        Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
+        Display::tft.drawString(lbuf, DIST_VIZ_CX + sw + 3, sy - 4, 1);
     }
 
-    Display::tft.setTextColor(col, Display::Colors::BG);
-    Display::tft.drawCentreString(mainBuf, 120, CONTENT_Y + 50, 7);
-    Display::tft.setTextColor(locked ? Display::Colors::AMBER : Display::Colors::GREEN_DIM,
-                               Display::Colors::BG);
-    Display::tft.drawCentreString(unitBuf, 120, CONTENT_Y + 150, 4);
+    // Device block at origin
+    Display::tft.fillRect(DIST_VIZ_CX - 7, devY - 5, 14, 6, Display::Colors::GREEN_DIM);
 
-    // 4 individual zone readings below the unit
-    Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
-    for (int i = 0; i < 4; i++) {
-        float zd = TofState::distances[DIST_CENTER_ZONES[i]];
-        char zbuf[12];
-        if (zd <= 0.0f) strcpy(zbuf, "---");
-        else if (zd < 1000.0f) sprintf(zbuf, "%.0fmm", zd);
-        else sprintf(zbuf, "%.2fm", zd / 1000.0f);
-        int zx = (i % 2 == 0) ? 60 : 180;
-        int zy = CONTENT_Y + 190 + (i / 2) * 16;
-        Display::tft.drawCentreString(zbuf, zx, zy, 1);
+    // Target marker at measured distance
+    if (d > 10.0f) {
+        float dc = (d > DIST_VIZ_MAX) ? DIST_VIZ_MAX : d;
+        float t  = dc / DIST_VIZ_MAX;
+        int ty   = devY - (int)(t * DIST_VIZ_H);
+        int tw   = (int)(spread * t);
+        // Filled horizontal bar at target distance
+        Display::tft.fillRect(DIST_VIZ_CX - tw, ty - 1, tw * 2 + 1, 3,
+                               d > DIST_VIZ_MAX ? Display::Colors::RED : Display::Colors::GREEN);
+        Display::tft.fillCircle(DIST_VIZ_CX, ty, 5, Display::Colors::GREEN);
+        // Fill beam between device and target
+        Display::tft.drawLine(DIST_VIZ_CX, devY - 5, DIST_VIZ_CX, ty, Display::Colors::GREEN);
     }
 }
 
@@ -273,13 +399,11 @@ static void drawDistTab() {
     Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, TAB_Y - CONTENT_Y, Display::Colors::BG);
     distState    = DIST_LIVE;
     distPrevLive = -9999.0f;
-
-    Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
-    Display::tft.drawCentreString("CENTER 2x2 DISTANCE", 120, CONTENT_Y + 10, 1);
-
-    drawDistBtn(false);
     tofUpdate();
-    drawDistValue(centerDist(), false);
+    float d = centerDist();
+    drawDistValue(d, false);
+    drawDistViz(d);
+    drawDistBtn(false);
 }
 
 static void tickDistTab() {
@@ -289,6 +413,7 @@ static void tickDistTab() {
     if (fabsf(d - distPrevLive) < 5.0f) return;
     distPrevLive = d;
     drawDistValue(d, false);
+    drawDistViz(d);
 }
 
 static void handleDistTouch(int tx, int ty) {
@@ -298,6 +423,7 @@ static void handleDistTouch(int tx, int ty) {
         distLocked = centerDist();
         distState  = DIST_LOCKED;
         drawDistValue(distLocked, true);
+        drawDistViz(distLocked);
         drawDistBtn(true);
     } else {
         distState    = DIST_LIVE;

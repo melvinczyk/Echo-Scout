@@ -15,7 +15,7 @@ void Display::drawButton(const Button& button) {
     tft.drawCentreString(button.text, bx + bw / 2, by + 9, button.font_size);
 }
 
-void Display::drawHeader(const char* title) {
+void Display::drawHeader(const char* title, bool showCal) {
     tft.fillRect(0, 0, SCREEN_W, HEADER_H, Colors::BG);
     tft.drawFastHLine(0, HEADER_H - 1, SCREEN_W, Colors::SEP);
     // Back button (left)
@@ -26,13 +26,12 @@ void Display::drawHeader(const char* title) {
     tft.setTextColor(Colors::GREEN, Colors::BG);
     tft.drawCentreString(title, 120, 9, 2);
     // CALIBRATE button (right)
-    if (AppState::currentScreen != Display::SPIRIT){
+    if (showCal && AppState::currentScreen != Display::SPIRIT) {
         tft.drawRoundRect(CAL_BTN_X, CAL_BTN_Y, CAL_BTN_W, CAL_BTN_H, 3, Colors::GREEN_DIM);
         tft.setTextColor(Colors::GREEN_DIM, Colors::BG);
         tft.drawCentreString("CAL", CAL_BTN_X + CAL_BTN_W / 2, 7, 2);
-
-        }
     }
+}
 void Display::drawErrorScreen(const char* text) {
     tft.setTextColor(Colors::RED, Colors::BG);
     tft.drawCentreString(text, 120, 140, 2);

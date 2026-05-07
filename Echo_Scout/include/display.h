@@ -64,7 +64,7 @@ namespace Display {
 
     bool initDisplay();
     void drawButton(const Button& button);
-    void drawHeader(const char* title);
+    void drawHeader(const char* title, bool showCal = true);
     void drawErrorScreen(const char* text);
     void drawAsciiArt(const AsciiArt& art, Colors col);
 }

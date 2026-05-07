@@ -7,7 +7,7 @@
 static const char* NVS_NS  = "echo";
 static const char* NVS_CFG = "cfg";
 static const char* NVS_VER = "ver";
-static constexpr uint8_t CFG_VERSION = 1;
+static constexpr uint8_t CFG_VERSION = 2;
 
 
 const uint8_t hitsVals[] = {1, 2, 3, 4, 5};
@@ -59,9 +59,12 @@ void loadSettings() {
     Preferences prefs;
     prefs.begin(NVS_NS, true);
     uint8_t ver = prefs.getUChar(NVS_VER, 0);
-    if (ver == CFG_VERSION)
+    size_t stored = prefs.getBytesLength(NVS_CFG);
+    if (ver == CFG_VERSION && stored == sizeof(cfg))
         prefs.getBytes(NVS_CFG, &cfg, sizeof(cfg));
     prefs.end();
+    // Re-save so the blob is always current size/version
+    saveSettings();
 }
 
 void applySettings() {

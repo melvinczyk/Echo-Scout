@@ -4,6 +4,7 @@
 #include "display.h"
 #include "touch.h"
 #include "device_state.h"
+#include "device_icons.h"
 
 // ---- Layout ----
 static constexpr int CONTENT_Y = Display::HEADER_H;            // 28
@@ -171,30 +172,6 @@ static void drawPlumbBob(float ox) {
     Display::tft.drawCircle(bx, by, 9, Display::Colors::GREEN_DIM);
 }
 
-// Orientation indicator: portrait device outline with an up-arrow showing
-// which edge to hold up. Redrawn every tick so it survives the erase pass.
-static void drawPlumbIndicator() {
-    // Portrait device outline — right side of content, above crosshair
-    const int IX = 188, IY = CONTENT_Y + 8;
-    const int IW = 26, IH = 36;
-    Display::tft.fillRect(IX - 2, IY - 10, IW + 4, IH + 14, Display::Colors::BG);
-    Display::tft.drawRect(IX, IY, IW, IH, Display::Colors::GREEN_DIM);
-    // Top edge bright = pivot edge (hold this end UP)
-    Display::tft.drawFastHLine(IX + 2, IY, IW - 4, Display::Colors::GREEN);
-    // Up-arrow above the top edge (▲)
-    int ax = IX + IW / 2, ay = IY - 2;
-    Display::tft.drawLine(ax, ay - 5, ax - 4, ay, Display::Colors::GREEN);
-    Display::tft.drawLine(ax, ay - 5, ax + 4, ay, Display::Colors::GREEN);
-    Display::tft.drawFastVLine(ax, ay - 5, 5, Display::Colors::GREEN);
-    // Pivot dot at top-centre of device
-    Display::tft.fillCircle(ax, IY, 2, Display::Colors::GREEN);
-    // Dashed plumb reference (straight down from pivot)
-    for (int d = 4; d < IH - 4; d += 5) {
-        Display::tft.drawPixel(ax, IY + d, Display::Colors::GREEN_FAINT);
-    }
-    // Bob dot at rest (centre-bottom)
-    Display::tft.fillCircle(ax, IY + IH - 6, 4, Display::Colors::GREEN_DIM);
-}
 
 static void drawPlumbTab() {
     Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, CONTENT_H, Display::Colors::BG);
@@ -208,8 +185,7 @@ static void drawPlumbTab() {
     // Anchor pivot dot
     Display::tft.fillCircle(PLUMB_AX, PLUMB_AY, 4, Display::Colors::GREEN_DIM);
 
-    // Axis indicator
-    drawPlumbIndicator();
+    drawIconFrontHoriz(200, CONTENT_Y + 34);
 
     // Bottom label
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
@@ -240,8 +216,7 @@ static void tickPlumbTab() {
 
     prevPbOx = ox;
     drawPlumbBob(ox);
-    drawPlumbIndicator();   // redraw after erase pass
-
+    drawIconFrontHoriz(200, CONTENT_Y + 34);
     // Restore pivot dot
     Display::tft.fillCircle(PLUMB_AX, PLUMB_AY, 4, Display::Colors::GREEN_DIM);
 
@@ -375,12 +350,7 @@ static void enterTab() {
 // ==================== PUBLIC ====================
 void drawImuBase() {
     Display::tft.fillScreen(Display::Colors::BG);
-    Display::tft.drawFastHLine(0, Display::HEADER_H-1, Display::SCREEN_W, Display::Colors::SEP);
-    Display::tft.drawRoundRect(3, 3, 64, Display::HEADER_H-6, 3, Display::Colors::GREEN_DIM);
-    Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("< MENU", 35, 7, 2);
-    Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
-    Display::tft.drawCentreString("IMU", 120, 9, 2);
+    Display::drawHeader("ATTITUDE");
 
     if (!ImuState::ready) {
         Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);

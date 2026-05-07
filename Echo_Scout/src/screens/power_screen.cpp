@@ -2,6 +2,7 @@
 #include "display.h"
 #include "settings.h"
 #include <esp_sleep.h>
+#include <esp_system.h>
 
 
 void drawPowerConfirm() {
@@ -10,23 +11,42 @@ void drawPowerConfirm() {
     Display::tft.drawRect(4, 4, 232, 312, Display::Colors::RED);
 
     Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
-    Display::tft.drawCentreString("POWER OFF?", 120, 70, 4);
+    Display::tft.drawCentreString("POWER", 120, 55, 4);
+    Display::tft.drawCentreString("OPTIONS", 120, 90, 4);
 
-    Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("Press BOOT button to", 120, 130, 1);
-    Display::tft.drawCentreString("wake the device again.", 120, 145, 1);
+    // RESTART button (top)
+    Display::tft.drawRect(20, 148, 200, 44, Display::Colors::AMBER);
+    Display::tft.drawRect(22, 150, 196, 40, Display::Colors::AMBER);
+    Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
+    Display::tft.drawCentreString("[ RESTART ]", 120, 162, 2);
+    Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
+    Display::tft.drawCentreString("rescans all devices", 120, 185, 1);
 
-    // CONFIRM button
-    Display::tft.drawRect(20, 180, 200, 44, Display::Colors::RED);
-    Display::tft.drawRect(22, 182, 196, 40, Display::Colors::RED);
+    // POWER OFF button (middle)
+    Display::tft.drawRect(20, 204, 200, 44, Display::Colors::RED);
+    Display::tft.drawRect(22, 206, 196, 40, Display::Colors::RED);
     Display::tft.setTextColor(Display::Colors::RED, Display::Colors::BG);
-    Display::tft.drawCentreString("[ CONFIRM OFF ]", 120, 194, 2);
+    Display::tft.drawCentreString("[ POWER OFF ]", 120, 218, 2);
+    Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
+    Display::tft.drawCentreString("tap screen to wake", 120, 241, 1);
 
-    // CANCEL button
-    Display::tft.drawRect(20, 236, 200, 44, Display::Colors::GREEN_DIM);
-    Display::tft.drawRect(22, 238, 196, 40, Display::Colors::GREEN_DIM);
+    // CANCEL button (bottom)
+    Display::tft.drawRect(20, 260, 200, 44, Display::Colors::GREEN_DIM);
+    Display::tft.drawRect(22, 262, 196, 40, Display::Colors::GREEN_DIM);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("[ CANCEL ]", 120, 250, 2);
+    Display::tft.drawCentreString("[ CANCEL ]", 120, 274, 2);
+}
+
+
+void executeRestart() {
+    int startBright = blVals[cfg.brightnessIdx];
+    for (int v = startBright; v >= 0; v -= 8) {
+        ledcWrite(Config::BL_PWM_CH, max(v, 0));
+        delay(8);
+    }
+    ledcWrite(Config::BL_PWM_CH, 0);
+    delay(200);
+    esp_restart();
 }
 
 
@@ -43,8 +63,7 @@ void executePowerOff() {
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
     Display::tft.drawCentreString("POWERING OFF", 120, 130, 2);
     Display::tft.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
-    Display::tft.drawCentreString("Hold BOOT button", 120, 165, 1);
-    Display::tft.drawCentreString("to wake device", 120, 180, 1);
+    Display::tft.drawCentreString("Tap screen to wake", 120, 165, 1);
     delay(1800);
 
     ledcWrite(Config::BL_PWM_CH, 0);
