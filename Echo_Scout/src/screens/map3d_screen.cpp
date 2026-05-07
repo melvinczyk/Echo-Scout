@@ -1,5 +1,7 @@
 #include <math.h>
 #include "screens/map3d_screen.h"
+#include "base/color_scheme.h"
+#include "base/settings.h"
 #include "devices/imu.h"
 #include "devices/tof.h"
 #include "base/display.h"
@@ -7,28 +9,12 @@
 #include "devices/device_state.h"
 #include <esp_heap_caps.h>
 
-static constexpr int VIEW_Y = Display::HEADER_H;
-static constexpr int BTN_BAR = 48;
-static constexpr int VIEW_H = Display::SCREEN_H - VIEW_Y - BTN_BAR;
-static constexpr int VIEW_CX = Display::SCREEN_W / 2;
-static constexpr int VIEW_CY = VIEW_Y + VIEW_H / 2;
-static constexpr float FOCAL = 200.0f;
-static constexpr float NEAR = 80.0f;
-
-static constexpr int MAX_PTS = 65536;
-static constexpr int RENDER_MAX = 8192;
+using namespace Map3dScreen;
 
 struct MapPoint { float x, y, z; uint16_t col; };
 
 static MapPoint* pts = nullptr;
 static int nPts = 0;
-
-static constexpr int BTN_Y  = Display::SCREEN_H - BTN_BAR + 7;
-static constexpr int BTN_BH = 32;
-static constexpr int CLR_X  = 8,   CLR_W = 106;
-static constexpr int PAL_X  = 126, PAL_W = 106;
-
-static constexpr float ZONE_STEP = 5.625f * 3.14159265f / 180.0f;
 
 static inline void qRot(float qr, float qi, float qj, float qk,
                          float vx, float vy, float vz,
@@ -53,64 +39,6 @@ static bool project(float wx, float wy, float wz, int& sx, int& sy) {
            sy >= VIEW_Y + 2 && sy < VIEW_Y + VIEW_H - 2;
 }
 
-struct Stop { float t; uint8_t r, g, b; };
-
-static const Stop STOPS_IRON[] = {
-    {0.00f,   0,   0,   0},
-    {0.10f,  20,   0,  60},
-    {0.30f, 100,   0, 120},
-    {0.50f, 200,   0,  60},
-    {0.65f, 240,  40,   0},
-    {0.80f, 255, 160,   0},
-    {0.92f, 255, 240,  60},
-    {1.00f, 255, 255, 255},
-};
-static const Stop STOPS_VIRIDIS[] = {
-    {0.00f,  68,   1,  84},
-    {0.25f,  58,  82, 139},
-    {0.50f,  32, 145, 140},
-    {0.75f,  94, 201,  98},
-    {1.00f, 253, 231,  37},
-};
-static const Stop STOPS_PLASMA[] = {
-    {0.00f,  13,   8, 135},
-    {0.25f, 126,   3, 168},
-    {0.50f, 204,  71, 120},
-    {0.75f, 248, 149,  64},
-    {1.00f, 240, 249,  33},
-};
-static const Stop STOPS_GRAY[] = {
-    {0.00f,   0,   0,   0},
-    {1.00f, 255, 255, 255},
-};
-
-enum MapPalette { IRON, VIRIDIS, PLASMA, GRAY, NUM_PALETTES };
-static MapPalette mapPalette = IRON;
-
-struct PalDef { const char* name; const Stop* stops; int n; };
-static const PalDef PALETTES[NUM_PALETTES] = {
-    { "IRON",    STOPS_IRON,    8 },
-    { "VIRIDIS", STOPS_VIRIDIS, 5 },
-    { "PLASMA",  STOPS_PLASMA,  5 },
-    { "GRAY",    STOPS_GRAY,    2 },
-};
-
-static uint16_t distCol(float d) {
-    float t = 1.0f - (d * (1.0f / 4000.0f));
-    if (t < 0.0f) t = 0.0f;
-    if (t > 1.0f) t = 1.0f;
-
-    const PalDef& pal = PALETTES[mapPalette];
-    int i = 0;
-    while (i < pal.n - 2 && t > pal.stops[i + 1].t) i++;
-    float f = (t - pal.stops[i].t) / (pal.stops[i + 1].t - pal.stops[i].t);
-
-    uint8_t r = (uint8_t)(pal.stops[i].r + f * (int)(pal.stops[i+1].r - pal.stops[i].r));
-    uint8_t g = (uint8_t)(pal.stops[i].g + f * (int)(pal.stops[i+1].g - pal.stops[i].g));
-    uint8_t b = (uint8_t)(pal.stops[i].b + f * (int)(pal.stops[i+1].b - pal.stops[i].b));
-
-    return (uint16_t)(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
-}
 
 static bool zoneWorld(int zone, float dist,
                       float qr, float qi, float qj, float qk,
@@ -149,7 +77,7 @@ static void renderView() {
             int sx, sy;
             if (project(wx, wy, wz, sx, sy)) {
                 int lsy = sy - VIEW_Y;
-                uint16_t c = distCol(TofState::distances[z]);
+                uint16_t c = ColorScheme::fromDist(cfg.mapPaletteIdx, TofState::distances[z]);
                 Display::spr.fillRect(sx - 1, lsy - 1, 3, 3, c);
                 Display::spr.drawPixel(sx, lsy, Display::Colors::WHITE);
             }
@@ -190,7 +118,7 @@ static void captureScan() {
     for (int z = 0; z < 64; z++) {
         float wx, wy, wz;
         if (!zoneWorld(z, TofState::distances[z], qr, qi, qj, qk, wx, wy, wz)) continue;
-        pts[nPts % MAX_PTS] = { wx, wy, wz, distCol(TofState::distances[z]) };
+        pts[nPts % MAX_PTS] = { wx, wy, wz, ColorScheme::fromDist(cfg.mapPaletteIdx, TofState::distances[z]) };
         nPts++;
     }
 }

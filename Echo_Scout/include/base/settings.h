@@ -16,6 +16,7 @@ struct Settings {
   uint8_t sleepTimeoutIdx;
   uint8_t distUnitIdx;
   uint8_t speedUnitIdx;
+  uint8_t mapPaletteIdx;
 };
 
 extern const uint8_t hitsVals[];
@@ -44,6 +45,7 @@ constexpr uint8_t NUM_BL = 5;
 constexpr uint8_t NUM_SLEEP = 6;
 constexpr uint8_t NUM_DIST_UNIT = 2;
 constexpr uint8_t NUM_SPEED_UNIT = 4;
+constexpr uint8_t NUM_MAP_PALETTE = 4;
 constexpr float SMOOTH_ALPHA = 0.4f;
 
 extern const uint8_t blVals[];

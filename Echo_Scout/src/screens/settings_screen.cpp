@@ -1,4 +1,5 @@
 #include "screens/settings_screen.h"
+#include "base/color_scheme.h"
 #include "base/screen_manager.h"
 #include "base/display.h"
 #include "devices/touch.h"
@@ -17,6 +18,7 @@ static const char *blLabel(uint8_t i) { return blLabels[i]; }
 static const char *slLabel(uint8_t i) { return sleepTimeoutLabels[i]; }
 static const char *duLabel(uint8_t i) { return distUnitLabels[i]; }
 static const char *suLabel(uint8_t i) { return speedUnitLabels[i]; }
+static const char *mpLabel(uint8_t i) { return ColorScheme::PALETTES[i].name; }
 
 
 SRow settingRows[SettingsScreen::NUM_SETTING_ROWS] = {
@@ -35,6 +37,7 @@ SRow settingRows[SettingsScreen::NUM_SETTING_ROWS] = {
     {"BACKLIGHT", "brightness", &cfg.brightnessIdx, NUM_BL, blLabel, false},
     {"UNITS", "distance units", &cfg.distUnitIdx, NUM_DIST_UNIT, duLabel, false},
     {"SPEED", "speed units", &cfg.speedUnitIdx, NUM_SPEED_UNIT, suLabel, false},
+    {"MAP PALETTE", "3D map colors", &cfg.mapPaletteIdx, NUM_MAP_PALETTE, mpLabel, false},
     {"POWER", "", nullptr, 0, secLabel, true},
     {"SLEEP", "idle sleep timeout", &cfg.sleepTimeoutIdx, NUM_SLEEP, slLabel, false},
 };
