@@ -1,8 +1,8 @@
 #ifndef GRID_H
 #define GRID_H
 
-#include "config.h"
-#include "settings.h"
+#include "base/config.h"
+#include "base/settings.h"
 
 struct GridPx {
   int16_t x, y;
@@ -10,8 +10,8 @@ struct GridPx {
 };
 
 struct SpokeEndpoint {
-  int16_t  ex, ey;
-  float    angleDeg;
+  int16_t ex, ey;
+  float angleDeg;
   uint16_t col;
 };
 

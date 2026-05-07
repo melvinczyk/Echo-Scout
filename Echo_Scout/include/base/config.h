@@ -26,15 +26,13 @@ namespace Config {
     constexpr uint8_t BL_PWM_CH = 0;
     constexpr uint32_t BL_PWM_FREQ = 20000;
     constexpr uint8_t BL_PWM_RES = 8;
-    constexpr uint8_t WAKE_PIN = TOUCH_INT;  // GPIO17 — touch INT pulls low on tap
+    constexpr uint8_t WAKE_PIN = TOUCH_INT;  // GPIO17 - touch INT pulls low on tap
 
     // Battery
     constexpr uint8_t BAT_ADC_PIN = 9;
     constexpr uint16_t BAT_MV_FULL = 4200;
     constexpr uint16_t BAT_MV_EMPTY = 3400;
     constexpr uint16_t BAT_CAPACITY_MAH = 1000;
-    constexpr uint16_t USB_MV_THRESHOLD = 4050;
-    constexpr uint8_t USB_CONFIRM_COUNT = 3;
 }
 
 #endif

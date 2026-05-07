@@ -1,37 +1,37 @@
 #include <math.h>
-#include "map3d_screen.h"
-#include "imu.h"
-#include "tof.h"
-#include "display.h"
-#include "touch.h"
-#include "device_state.h"
+#include "screens/map3d_screen.h"
+#include "devices/imu.h"
+#include "devices/tof.h"
+#include "base/display.h"
+#include "devices/touch.h"
+#include "devices/device_state.h"
 #include <esp_heap_caps.h>
 
 // ── Layout ───────────────────────────────────────────────────────────────────
-static constexpr int VIEW_Y   = Display::HEADER_H;
-static constexpr int BTN_BAR  = 48;
-static constexpr int VIEW_H   = Display::SCREEN_H - VIEW_Y - BTN_BAR;
-static constexpr int VIEW_CX  = Display::SCREEN_W / 2;
-static constexpr int VIEW_CY  = VIEW_Y + VIEW_H / 2;
-static constexpr float FOCAL  = 200.0f;
-static constexpr float NEAR   = 80.0f;
+static constexpr int VIEW_Y = Display::HEADER_H;
+static constexpr int BTN_BAR = 48;
+static constexpr int VIEW_H = Display::SCREEN_H - VIEW_Y - BTN_BAR;
+static constexpr int VIEW_CX = Display::SCREEN_W / 2;
+static constexpr int VIEW_CY = VIEW_Y + VIEW_H / 2;
+static constexpr float FOCAL = 200.0f;
+static constexpr float NEAR = 80.0f;
 
-// ── Point cloud — PSRAM ring buffer ──────────────────────────────────────────
+// ── Point cloud - PSRAM ring buffer ──────────────────────────────────────────
 // 65536 points × 14 bytes = 896 KB in PSRAM
-static constexpr int MAX_PTS    = 65536;
-static constexpr int RENDER_MAX = 8192;   // max points projected per frame
+static constexpr int MAX_PTS = 65536;
+static constexpr int RENDER_MAX = 8192; // max points projected per frame
 
 struct MapPoint { float x, y, z; uint16_t col; };
 
-static MapPoint* pts  = nullptr;
-static int       nPts = 0;   // total written; ring index = nPts % MAX_PTS
+static MapPoint* pts = nullptr;
+static int nPts = 0; // total written; ring index = nPts % MAX_PTS
 
 // ── Button constants ─────────────────────────────────────────────────────────
-static constexpr int BTN_Y  = Display::SCREEN_H - BTN_BAR + 7;
+static constexpr int BTN_Y = Display::SCREEN_H - BTN_BAR + 7;
 static constexpr int BTN_BH = 32;
-static constexpr int CLR_X  = 8, CLR_W = 224;
+static constexpr int CLR_X = 8, CLR_W = 224;
 
-// ── Zone FoV — VL53L5CX 8×8, ~45° total FoV ────────────────────────────────
+// ── Zone FoV - VL53L5CX 8×8, ~45° total FoV ────────────────────────────────
 static constexpr float ZONE_STEP = 5.625f * 3.14159265f / 180.0f;
 
 // ── Math helpers ─────────────────────────────────────────────────────────────
@@ -113,14 +113,14 @@ static void renderView() {
 
     // Subsample stored cloud so we always project at most RENDER_MAX points
     int count = min(nPts, MAX_PTS);
-    int step  = max(1, count / RENDER_MAX);
+    int step = max(1, count / RENDER_MAX);
     for (int i = 0; i < count; i += step) {
         int sx, sy;
         if (project(pts[i].x, pts[i].y, pts[i].z, sx, sy))
             Display::spr.drawPixel(sx, sy - VIEW_Y, pts[i].col);
     }
 
-    // Live ToF scan — 3×3 bright dots
+    // Live ToF scan - 3×3 bright dots
     if (TofState::ready) {
         float qr = ImuState::qR, qi = ImuState::qI,
               qj = ImuState::qJ, qk = ImuState::qK;

@@ -1,0 +1,86 @@
+#include "tabs/imu_tabs.h"
+#include "devices/device_icons.h"
+
+// Pivot at top-centre; bob hangs down showing left/right tilt.
+// Visual indicator (top-right): side-view of device showing pivot at top edge.
+static constexpr int PLUMB_AX = 120, PLUMB_AY = 60, PLUMB_LEN = 150;
+static float prevPbOx = -9999;
+
+// Bounding box for erase
+static void plumbBobBBox(float ox, int& x0, int& y0, int& w, int& h) {
+    float chord = sqrtf((float)PLUMB_LEN*PLUMB_LEN - ox*ox);
+    int bx = constrain(PLUMB_AX+(int)ox, 10, Display::SCREEN_W-10);
+    int by = constrain(PLUMB_AY+(int)chord, PLUMB_AY+4, PLUMB_AY+PLUMB_LEN);
+    int r = 10;
+    // Box encompassing line from anchor to bob
+    x0 = min(PLUMB_AX, bx) - r;
+    y0 = min(PLUMB_AY, by) - r;
+    int x1 = max(PLUMB_AX, bx) + r;
+    int y1 = max(PLUMB_AY, by) + r;
+    w = x1 - x0;
+    h = y1 - y0;
+}
+
+static void drawPlumbBob(float ox) {
+    float chord = sqrtf((float)PLUMB_LEN*PLUMB_LEN - ox*ox);
+    int bx = constrain(PLUMB_AX+(int)ox, 10, Display::SCREEN_W-10);
+    int by = constrain(PLUMB_AY+(int)chord, PLUMB_AY+4, PLUMB_AY+PLUMB_LEN);
+    Display::tft.drawLine(PLUMB_AX, PLUMB_AY, bx, by, Display::Colors::GREEN);
+    Display::tft.fillCircle(bx, by, 9, Display::Colors::GREEN);
+    Display::tft.drawCircle(bx, by, 9, Display::Colors::GREEN_DIM);
+}
+
+void drawPlumbTab() {
+    Display::tft.fillRect(0, CONTENT_Y, Display::SCREEN_W, CONTENT_H, Display::Colors::BG);
+    prevPbOx = -9999;
+
+    // Crosshair at bob rest position
+    int gx = PLUMB_AX, gy = PLUMB_AY + PLUMB_LEN;
+    Display::tft.drawFastHLine(gx-18, gy, 36, Display::Colors::GREEN_FAINT);
+    Display::tft.drawFastVLine(gx, gy-18, 36, Display::Colors::GREEN_FAINT);
+
+    // Anchor pivot dot
+    Display::tft.fillCircle(PLUMB_AX, PLUMB_AY, 4, Display::Colors::GREEN_DIM);
+
+    drawIconFrontHoriz(200, CONTENT_Y + 34);
+
+    // Bottom label
+    Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+    Display::tft.drawCentreString("DEVIATION", 120, 262, 1);
+}
+
+void tickPlumbTab() {
+    if (!imuUpdate()) return;
+    float roll, pitch, yaw; toEuler(roll, pitch, yaw);
+    float ox = sinf(roll * PI/180.0f) * PLUMB_LEN;
+    if (ox*ox > (float)(PLUMB_LEN*PLUMB_LEN)) ox = copysignf(PLUMB_LEN-1, ox);
+    if (fabsf(ox - prevPbOx) < 1.0f) return;
+
+    // Erase previous: fillRect over bounding box of old line+bob
+    if (prevPbOx > -9998) {
+        int ex, ey, ew, eh;
+        plumbBobBBox(prevPbOx, ex, ey, ew, eh);
+        Display::tft.fillRect(ex, ey, ew, eh, Display::Colors::BG);
+        // Restore crosshair segments that may have been in the bbox
+        int gx = PLUMB_AX, gy = PLUMB_AY + PLUMB_LEN;
+        if (ey <= gy && gy <= ey+eh)
+            Display::tft.drawFastHLine(max(gx-18, ex), gy,
+                min(gx+18, ex+ew) - max(gx-18, ex), Display::Colors::GREEN_FAINT);
+        if (ex <= gx && gx <= ex+ew)
+            Display::tft.drawFastVLine(gx, max(gy-18, ey),
+                min(gy+18, ey+eh) - max(gy-18, ey), Display::Colors::GREEN_FAINT);
+    }
+
+    prevPbOx = ox;
+    drawPlumbBob(ox);
+    drawIconFrontHoriz(200, CONTENT_Y + 34);
+    // Restore pivot dot
+    Display::tft.fillCircle(PLUMB_AX, PLUMB_AY, 4, Display::Colors::GREEN_DIM);
+
+    // Deviation readout
+    float dev = fabsf(atan2f(ox, sqrtf((float)(PLUMB_LEN*PLUMB_LEN)-ox*ox))) * 180.0f/PI;
+    char buf[12]; sprintf(buf, "%.1f deg", dev);
+    Display::tft.fillRect(40, 268, 160, 14, Display::Colors::BG);
+    Display::tft.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
+    Display::tft.drawCentreString(buf, 120, 268, 2);
+}

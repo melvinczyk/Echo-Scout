@@ -1,11 +1,9 @@
 #ifndef DEVICE_ICONS_H
 #define DEVICE_ICONS_H
 
-#include "display.h"
+#include "base/display.h"
 
-// Simple orientation hint icons. Each fits in ~36×36 centred on (cx, cy).
 
-// Portrait rectangle + upward arrow — display faces sky (tilted 90° back)
 inline void drawIconFrontHoriz(int cx, int cy) {
     constexpr int W = 14, H = 26;
     int dx = cx - W/2, dy = cy - H/2;
@@ -18,7 +16,7 @@ inline void drawIconFrontHoriz(int cx, int cy) {
     Display::tft.drawLine(ax, ay - 7, ax + 3, ay - 4, Display::Colors::GREEN_DIM);
 }
 
-// Portrait rectangle + forward arrow (→) — display faces horizon (upright)
+
 inline void drawIconBackVert(int cx, int cy) {
     constexpr int W = 14, H = 26;
     int dx = cx - W/2, dy = cy - H/2;

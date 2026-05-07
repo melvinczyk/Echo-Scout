@@ -1,20 +1,20 @@
 #include <math.h>
-#include "calibrate_screen.h"
-#include "imu.h"
-#include "display.h"
-#include "touch.h"
-#include "device_state.h"
+#include "screens/calibrate_screen.h"
+#include "devices/imu.h"
+#include "base/display.h"
+#include "devices/touch.h"
+#include "devices/device_state.h"
 
-static const int CX          = SpiritScreen::CX;
-static const int CY          = SpiritScreen::CY;
-static const int R           = SpiritScreen::RADIUS;
+static const int CX = SpiritScreen::CX;
+static const int CY = SpiritScreen::CY;
+static const int R = SpiritScreen::RADIUS;
 static const int BALL_RADIUS = SpiritScreen::BALL_R;
 
-static constexpr uint16_t COL_BOWL    = Display::Colors::GREEN_DIM;
+static constexpr uint16_t COL_BOWL = Display::Colors::GREEN_DIM;
 static constexpr uint16_t COL_BALL_OK = Display::Colors::GREEN;
 static constexpr uint16_t COL_BALL_NG = Display::Colors::RED;
-static constexpr uint16_t COL_CROSS   = Display::Colors::GREEN_DIM;
-static constexpr uint16_t COL_CENTRE  = Display::Colors::GREEN;
+static constexpr uint16_t COL_CROSS = Display::Colors::GREEN_DIM;
+static constexpr uint16_t COL_CENTRE = Display::Colors::GREEN;
 
 static constexpr int DEAD_ZONE = 12;
 
@@ -23,11 +23,11 @@ static constexpr float TILT_SCALE = MAX_DISP / 45.0f;  // px per degree
 
 static float bx = 0.0f, by = 0.0f;   // current ball position (relative to CX,CY)
 static float vx = 0.0f, vy = 0.0f;   // velocity
-static int   prevBx = 0, prevBy = 0; // last drawn position (screen coords)
-static bool  ballDrawn = false;
+static int prevBx = 0, prevBy = 0; // last drawn position (screen coords)
+static bool ballDrawn = false;
 
-static const float DAMPING  = 0.75f;
-static const float ACCEL    = 0.35f;   // how strongly tilt pulls the ball
+static const float DAMPING = 0.75f;
+static const float ACCEL = 0.35f; // how strongly tilt pulls the ball
 
 
 static void drawStaticElements() {
@@ -81,8 +81,8 @@ static void drawBall(int bsx, int bsy, bool isLevel) {
     Display::tft.drawCircle(bsx, bsy, BALL_RADIUS, Display::Colors::BG);
 }
 
-static bool  spiritLevel  = false;
-static bool  calFlash     = false;
+static bool spiritLevel = false;
+static bool calFlash = false;
 static unsigned long calFlashMs = 0;
 
 // Equal-width bottom buttons
@@ -90,7 +90,7 @@ static constexpr int CAL_BTN_X = 8,   CAL_BTN_Y = 298, CAL_BTN_W = 110, CAL_BTN_
 static constexpr int RST_BTN_X = 122, RST_BTN_Y = 298, RST_BTN_W = 110, RST_BTN_H = 18;
 
 static void drawBottomButtons() {
-    // CALIBRATE — shows "CAL OK" briefly after calibration
+    // CALIBRATE - shows "CAL OK" briefly after calibration
     Display::tft.fillRect(CAL_BTN_X, CAL_BTN_Y, CAL_BTN_W, CAL_BTN_H, Display::Colors::BG);
     bool flash = calFlash && (millis() - calFlashMs < 1500);
     if (!flash) calFlash = false;
@@ -112,7 +112,7 @@ void handleSpiritTouch(int tx, int ty) {
         ImuState::calJ = ImuState::rawQJ;
         ImuState::calK = ImuState::rawQK;
         ImuState::calibrated = true;
-        calFlash   = true;
+        calFlash = true;
         calFlashMs = millis();
         drawBottomButtons();
         return;
@@ -129,7 +129,7 @@ void handleSpiritTouch(int tx, int ty) {
 
 // ── readout ───────────────────────────────────────────────────────────────────
 static float prevRollS = -9999, prevPitchS = -9999;
-static bool  prevLevelS = false;
+static bool prevLevelS = false;
 
 static void drawReadout(float roll, float pitch, bool isLevel) {
     bool changed = fabsf(roll  - prevRollS)  > 0.3f ||
@@ -162,7 +162,7 @@ void drawSpiritBase() {
     vx = 0.0f; vy = 0.0f;
     ballDrawn = false;
     prevRollS = -9999; prevPitchS = -9999; prevLevelS = false;
-    calFlash  = false; spiritLevel = false;
+    calFlash = false; spiritLevel = false;
 
     Display::drawHeader("CALIBRATE");
 

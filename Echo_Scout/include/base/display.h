@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <TFT_eSPI.h>
-#include "config.h"
+#include "base/config.h"
 
 namespace Display {
 
@@ -64,6 +64,7 @@ namespace Display {
     };
 
     bool initDisplay();
+    void drawLoadingScreen();
     void drawButton(const Button& button);
     void drawHeader(const char* title, bool showCal = true);
     void drawErrorScreen(const char* text);

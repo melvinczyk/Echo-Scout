@@ -1,7 +1,7 @@
 #ifndef SCREEN_MANAGER_H
 #define SCREEN_MANAGER_H
 
-#include "display.h"
+#include "base/display.h"
 
 namespace ScreenManager {
     void tick();

@@ -1,14 +1,14 @@
 #ifndef RADAR_SCREEN_H
 #define RADAR_SCREEN_H
 
-#include "config.h"
-#include "grid.h"
-#include "settings.h"
-#include "display.h"
+#include "base/config.h"
+#include "base/grid.h"
+#include "base/settings.h"
+#include "base/display.h"
 
 namespace RadarScreen {
-    constexpr int      BLIP_RADIUS = 5;
-    constexpr uint16_t BLIP_COLOR  = 0xF800;
+    constexpr int BLIP_RADIUS = 5;
+    constexpr uint16_t BLIP_COLOR = 0xF800;
     constexpr int DASH_Y = 30;
     constexpr int DASH_H = 54;
     constexpr int APEX_X = 120;

@@ -1,16 +1,16 @@
-#include "menu_screen.h"
-#include "app_state.h"
-#include "display.h"
-#include "device_state.h"
-
+#include "screens/menu_screen.h"
+#include "base/app_state.h"
+#include "base/display.h"
+#include "devices/device_state.h"
+#include "screens/ascii_art.h"
 
 static MenuState menuState = {
-    .animPhase      = MenuAnimPhase::Corners,
-    .cornerStep     = 0,
-    .launchBlink    = false,
-    .timer          = 0,
-    .scoutGlow      = 0.0f,
-    .scoutGlowUp    = true,
+    .animPhase = MenuAnimPhase::Corners,
+    .cornerStep = 0,
+    .launchBlink = false,
+    .timer = 0,
+    .scoutGlow = 0.0f,
+    .scoutGlowUp = true,
     .scoutGlowTimer = 0,
     .bracketSegs    = {
         {6,   6,   18, true,  Display::Colors::GREEN_DIM},
@@ -24,6 +24,10 @@ static MenuState menuState = {
     }
 };
 
+
+static Display::AsciiArt echo = {AsciiArtInstance::ECHO, std::size(AsciiArtInstance::ECHO), 5, 9, 42, 16};
+static Display::AsciiArt scout = {AsciiArtInstance::SCOUT, std::size(AsciiArtInstance::SCOUT), 5, 9, 30, 80};
+    
 // Tools row
 static const Display::Button toolButtons[] = {
     { MenuScreen::SCANNER_X,  MenuScreen::SCANNER_Y,  MenuScreen::SCANNER_W,  MenuScreen::SCANNER_H,  1, "SCANNER",
@@ -39,27 +43,6 @@ static const Display::Button utilButtons[] = {
     { MenuScreen::BATTERY_X,  MenuScreen::BATTERY_Y,  MenuScreen::BATTERY_W,  MenuScreen::BATTERY_H,   1, "BATTERY",
       Display::Colors::GREEN_DIM, Display::Colors::GREEN_FAINT, Display::Colors::GREEN_DIM },
 };
-
-const char* scoutLines[] = {
-    "  _________                    __  ",
-    " /   _____/ ____  ____  __ ___/  |_",
-    " \\_____  \\_/ ___\\/  _ \\|  |  \\   __\\",
-    " /        \\  \\__(  <_> )  |  /|  | ",
-    "/_______  /\\___  >____/|____/ |__| ",
-    "        \\/     \\/                  ",
-};
-const Display::AsciiArt scout = { scoutLines, 6, 5, 9, 30, 80 };
-
-const char* echoLines[] = {
-    "___________      .__          ",
-    "\\_   _____/ ____ |  |__   ____",
-    " |    __)__/ ___\\|  |  \\ /  _ \\",
-    " |        \\  \\___|   Y  (  <_> )",
-    "/_______  /\\___  >___|  /\\____/",
-    "        \\/     \\/     \\/       ",
-};
-const Display::AsciiArt echo = { echoLines, 6, 5, 9, 42, 16 };
-
 
 static void drawTitleFrame() {
     Display::tft.drawRect(8,  8,  224, 138, Display::Colors::GREEN_DIM);
@@ -104,7 +87,7 @@ static void drawStatusBar() {
 void drawLaunchButton(bool highlight) {
     constexpr int bx = MenuScreen::LAUNCH_X, by = MenuScreen::LAUNCH_Y,
                   bw = MenuScreen::LAUNCH_W, bh = MenuScreen::LAUNCH_H;
-    uint16_t col  = highlight ? Display::Colors::GREEN     : Display::Colors::GREEN_DIM;
+    uint16_t col = highlight ? Display::Colors::GREEN : Display::Colors::GREEN_DIM;
     uint16_t col2 = highlight ? Display::Colors::GREEN_DIM : Display::Colors::GREEN_FAINT;
     Display::tft.fillRect(bx, by, bw, bh, Display::Colors::BG);
     Display::tft.drawRect(bx,   by,   bw,   bh,   col2);
@@ -157,18 +140,19 @@ void drawPowerButton() {
 
 
 void startMenu() {
-    menuState.animPhase    = MenuAnimPhase::Corners;
-    menuState.cornerStep   = 0;
-    menuState.launchBlink  = false;
-    menuState.timer        = millis();
-    menuState.scoutGlow    = 0.0f;
-    menuState.scoutGlowUp  = true;
+    menuState.animPhase = MenuAnimPhase::Corners;
+    menuState.cornerStep = 0;
+    menuState.launchBlink = false;
+    menuState.timer = millis();
+    menuState.scoutGlow = 0.0f;
+    menuState.scoutGlowUp = true;
     menuState.scoutGlowTimer = millis();
 
     Display::tft.fillScreen(Display::Colors::BG);
     Display::tft.drawRect(2, 2, 236, 316, Display::Colors::GREEN_FAINT);
 
     drawTitleFrame();
+
     Display::drawAsciiArt(echo, Display::Colors::GREEN);
     Display::drawAsciiArt(scout, Display::Colors::GREEN_FAINT);
     drawStatusBar();
@@ -199,17 +183,17 @@ void tickMenu() {
             if (menuState.cornerStep < NUM_BRACKET_SEGS) {
                 BracketSeg& seg = menuState.bracketSegs[menuState.cornerStep];
                 if (seg.isH) Display::tft.drawFastHLine(seg.x, seg.y, seg.len, seg.col);
-                else         Display::tft.drawFastVLine(seg.x, seg.y, seg.len, seg.col);
+                else Display::tft.drawFastVLine(seg.x, seg.y, seg.len, seg.col);
                 menuState.cornerStep++;
             } else {
                 menuState.animPhase = MenuAnimPhase::Hold;
-                menuState.timer     = now;
+                menuState.timer = now;
             }
         }
         break;
     case MenuAnimPhase::Hold:
         if (now - menuState.timer >= 550) {
-            menuState.timer       = now;
+            menuState.timer = now;
             menuState.launchBlink = !menuState.launchBlink;
             drawLaunchButton(menuState.launchBlink);
         }

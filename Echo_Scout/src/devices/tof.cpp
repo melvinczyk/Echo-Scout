@@ -1,14 +1,14 @@
 #include <Wire.h>
 #include <SparkFun_VL53L5CX_Library.h>
-#include "tof.h"
-#include "config.h"
-#include "device_state.h"
+#include "devices/tof.h"
+#include "base/config.h"
+#include "devices/device_state.h"
 
 static SparkFun_VL53L5CX imager;
 static VL53L5CX_ResultsData results;
 
 bool tofInit(void (*progressCb)(uint8_t pct)) {
-    Wire.setClock(1000000);   // 1 MHz — speeds up the ~84 KB firmware upload
+    Wire.setClock(1000000);   // 1 MHz - speeds up the ~84 KB firmware upload
     if (progressCb) progressCb(5);
 
     if (!imager.begin(Config::TOF_ADDRESS, Wire)) {
@@ -30,7 +30,7 @@ bool tofInit(void (*progressCb)(uint8_t pct)) {
     Wire.setClock(400000);
     if (progressCb) progressCb(100);
 
-    TofState::ready    = true;
+    TofState::ready = true;
     TofState::zoneCount = 64;
     Serial.println("VL53L5CX ready");
     return true;

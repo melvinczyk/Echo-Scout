@@ -1,19 +1,19 @@
-#include "screen_manager.h"
-#include "app_state.h"
-#include "display.h"
-#include "touch.h"
-#include "radar.h"
-#include "settings.h"
-#include "device_state.h"
-#include "menu_screen.h"
-#include "radar_screen.h"
-#include "settings_screen.h"
-#include "imu_screen.h"
-#include "battery_screen.h"
-#include "power_screen.h"
-#include "calibrate_screen.h"
-#include "tof_screen.h"
-#include "map3d_screen.h"
+#include "base/screen_manager.h"
+#include "base/app_state.h"
+#include "base/display.h"
+#include "devices/touch.h"
+#include "devices/radar.h"
+#include "base/settings.h"
+#include "devices/device_state.h"
+#include "screens/menu_screen.h"
+#include "screens/radar_screen.h"
+#include "screens/settings_screen.h"
+#include "screens/imu_screen.h"
+#include "screens/battery_screen.h"
+#include "screens/power_screen.h"
+#include "screens/calibrate_screen.h"
+#include "screens/tof_screen.h"
+#include "screens/map3d_screen.h"
 #include <esp_sleep.h>
 
 
@@ -33,7 +33,7 @@ static void menuOnTouch(int tx, int ty) {
         ScreenManager::switchScreen(Display::Screen::IMU);
     } else if (inRect(tx, ty, MenuScreen::SETTINGS_X, MenuScreen::SETTINGS_Y,
                                MenuScreen::SETTINGS_W, MenuScreen::SETTINGS_BH)) {
-        settingsScrollY = 0;
+        SettingsScreen::settingsScrollY = 0;
         ScreenManager::switchScreen(Display::Screen::SETTINGS);
     } else if (inRect(tx, ty, MenuScreen::BATTERY_X, MenuScreen::BATTERY_Y,
                                MenuScreen::BATTERY_W, MenuScreen::BATTERY_H)) {
@@ -99,34 +99,34 @@ void ScreenManager::tick() {
 }
 
 void ScreenManager::handleTouch() {
-    static bool wasTouched  = false;
-    static int  startY      = 0;
-    static int  startScroll = 0;
-    static bool dragMoved   = false;
+    static bool wasTouched = false;
+    static int startY = 0;
+    static int startScroll = 0;
+    static bool dragMoved = false;
 
     int tx, ty;
-    bool touched  = touchRead(tx, ty);
+    bool touched = touchRead(tx, ty);
     if (touched) ImuState::lastMotionMs = millis();
-    bool pressed  = touched && !wasTouched;
-    bool held     = touched &&  wasTouched;
+    bool pressed = touched && !wasTouched;
+    bool held = touched && wasTouched;
     bool released = !touched && wasTouched;
 
     if (AppState::currentScreen == Display::Screen::SETTINGS) {
         if (pressed) {
-            startY      = ty;
-            startScroll = settingsScrollY;
-            dragMoved   = false;
+            startY = ty;
+            startScroll = SettingsScreen::settingsScrollY;
+            dragMoved = false;
         } else if (held) {
             int drag = startY - ty;
             if (abs(drag) > 8) {
                 dragMoved = true;
                 int maxScroll = max(0, settingsTotalH() -
-                                       (Display::SCREEN_H - Display::HEADER_H - SET_RESET_H));
-                settingsScrollY = constrain(startScroll + drag, 0, maxScroll);
+                                       (Display::SCREEN_H - Display::HEADER_H - SettingsScreen::SET_RESET_H));
+                SettingsScreen::settingsScrollY = constrain(startScroll + drag, 0, maxScroll);
                 Display::tft.fillRect(0, Display::HEADER_H, Display::SCREEN_W,
-                                      Display::SCREEN_H - SET_RESET_H - Display::HEADER_H,
+                                      Display::SCREEN_H - SettingsScreen::SET_RESET_H - Display::HEADER_H,
                                       Display::Colors::BG);
-                for (int i = 0; i < NUM_SETTING_ROWS; i++)
+                for (int i = 0; i < SettingsScreen::NUM_SETTING_ROWS; i++)
                     drawSettingRowAt(i, settingRowY(i));
             }
         } else if (released && !dragMoved) {

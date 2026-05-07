@@ -1,5 +1,5 @@
-#include "grid.h"
-#include "radar_screen.h"
+#include "base/grid.h"
+#include "screens/radar_screen.h"
 
 GridPx gridPx[MAX_RING_PX];
 int gridPxCount = 0;

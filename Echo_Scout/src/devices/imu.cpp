@@ -1,8 +1,8 @@
 #include <math.h>
 #include <Adafruit_BNO08x.h>
-#include "imu.h"
-#include "config.h"
-#include "device_state.h"
+#include "devices/imu.h"
+#include "base/config.h"
+#include "devices/device_state.h"
 
 static Adafruit_BNO08x bno;
 static sh2_SensorValue_t sensorVal;
@@ -29,20 +29,16 @@ bool imuInit() {
 
 static void frameCorrectValues(float ri, float rj, float rk, float rr,
                                 float& oi, float& oj, float& ok, float& or_) {
-    or_ =  rr;
-    oi  =  ri;
-    oj  =  rk;
-    ok  = -rj;
+    or_ = rr;
+    oi = ri;
+    oj = rk;
+    ok = -rj;
 }
 
 
 bool imuUpdate() {
     if (!ImuState::ready) return false;
     if (!bno.getSensorEvent(&sensorVal)) return false;
-    if (sensorVal.sensorId == SH2_STEP_COUNTER) {
-        ImuState::stepCount = sensorVal.un.stepCounter.steps;
-        return false;
-    }
     if (sensorVal.sensorId != SH2_GAME_ROTATION_VECTOR) return false;
 
     float rawI = sensorVal.un.gameRotationVector.i;

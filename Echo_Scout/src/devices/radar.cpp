@@ -1,12 +1,12 @@
 #include <math.h>
-#include "radar.h"
-#include "settings.h"
-#include "device_state.h"
+#include "devices/radar.h"
+#include "base/settings.h"
+#include "devices/device_state.h"
 
-static float smoothedX[3]  = {0, 0, 0};
-static float smoothedY[3]  = {0, 0, 0};
-static float lastBlipX[3]  = {0, 0, 0};
-static float lastBlipY[3]  = {0, 0, 0};
+static float smoothedX[3] = {0, 0, 0};
+static float smoothedY[3] = {0, 0, 0};
+static float lastBlipX[3] = {0, 0, 0};
+static float lastBlipY[3] = {0, 0, 0};
 static uint8_t hitCount[3] = {0, 0, 0};
 static uint8_t dropCount[3]= {0, 0, 0};
 
@@ -100,18 +100,18 @@ void radarResetState() {
   for (int i = 0; i < 3; i++) {
     smoothedX[i] = smoothedY[i] = 0;
     lastBlipX[i] = lastBlipY[i] = 0;
-    hitCount[i]  = dropCount[i] = 0;
+    hitCount[i] = dropCount[i] = 0;
     RadarState::slotActive[i] = false;
-    RadarState::slotX[i]      = 0;
-    RadarState::slotY[i]      = 0;
+    RadarState::slotX[i] = 0;
+    RadarState::slotY[i] = 0;
   }
   for (int i = 0; i < 4; i++) RadarState::farZone[i] = false;
-  RadarState::present  = false;
+  RadarState::present = false;
   RadarState::newFrame = false;
 }
 
 static uint8_t frameBuf[30];
-static size_t  frameIdx   = 0;
+static size_t frameIdx = 0;
 static uint8_t frameState = 0;
 
 void radarProcessSerial() {
@@ -137,20 +137,20 @@ void radarProcessSerial() {
           t[2] = parseTarget(frameBuf + 16);
           applyPersistence(t);
 
-          RadarState::present  = false;
-          float bestDist       = cfgAccRange() + 1;
+          RadarState::present = false;
+          float bestDist = cfgAccRange() + 1;
           for (int i = 0; i < 4; i++) RadarState::farZone[i] = false;
 
           for (int i = 0; i < 3; i++) {
             if (t[i].present) {
-              float dist  = sqrtf((float)t[i].x * t[i].x + (float)t[i].y * t[i].y);
+              float dist = sqrtf((float)t[i].x * t[i].x + (float)t[i].y * t[i].y);
               float angle = atan2f((float)t[i].x, (float)t[i].y) * 180.0f / PI;
 
               if (dist <= cfgAccRange()) {
                 float outX, outY;
                 if (smoothTarget(i, RadarState::slotActive[i], t[i].x, t[i].y, outX, outY)) {
-                  RadarState::slotX[i]      = outX;
-                  RadarState::slotY[i]      = outY;
+                  RadarState::slotX[i] = outX;
+                  RadarState::slotY[i] = outY;
                   RadarState::slotActive[i] = true;
                 }
               } else {
@@ -160,11 +160,11 @@ void radarProcessSerial() {
               }
 
               if (dist < bestDist) {
-                bestDist             = dist;
+                bestDist = dist;
                 RadarState::distance = dist;
-                RadarState::azimuth  = angle;
-                RadarState::speed    = t[i].speed;
-                RadarState::present  = true;
+                RadarState::azimuth = angle;
+                RadarState::speed = t[i].speed;
+                RadarState::present = true;
               }
             } else {
               RadarState::slotActive[i] = false;
@@ -175,7 +175,7 @@ void radarProcessSerial() {
           RadarState::newFrame = true;
         }
         frameState = 0;
-        frameIdx   = 0;
+        frameIdx = 0;
       }
       break;
     }

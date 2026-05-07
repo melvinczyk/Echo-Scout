@@ -1,6 +1,6 @@
-#include "power_screen.h"
-#include "display.h"
-#include "settings.h"
+#include "screens/power_screen.h"
+#include "base/display.h"
+#include "base/settings.h"
 #include <esp_sleep.h>
 #include <esp_system.h>
 

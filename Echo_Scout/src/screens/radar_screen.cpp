@@ -1,8 +1,8 @@
 #include <math.h>
-#include "radar_screen.h"
-#include "radar.h"
-#include "device_state.h"
-#include "grid.h"
+#include "screens/radar_screen.h"
+#include "devices/radar.h"
+#include "devices/device_state.h"
+#include "base/grid.h"
 
 
 static Blip blips[3] = {{0, 0, false}, {0, 0, false}, {0, 0, false}};

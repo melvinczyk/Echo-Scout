@@ -1,7 +1,7 @@
 #ifndef TOUCH_H
 #define TOUCH_H
 
-#include "config.h"
+#include "base/config.h"
 
 void touchInit();
 bool touchRead(int &tx, int &ty);

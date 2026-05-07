@@ -1,39 +1,18 @@
-#include "battery_screen.h"
-#include "display.h"
+#include "screens/battery_screen.h"
+#include "base/display.h"
 
 
-static uint8_t usbHighCount = 0;
-static uint8_t usbLowCount  = 0;
-static bool    _usbState    = false;
-
-static void updateUsbState(float rawMv) {
-    if (rawMv >= Config::USB_MV_THRESHOLD) {
-        usbLowCount = 0;
-        if (usbHighCount < Config::USB_CONFIRM_COUNT) usbHighCount++;
-        if (usbHighCount >= Config::USB_CONFIRM_COUNT) _usbState = true;
-    } else {
-        usbHighCount = 0;
-        if (usbLowCount < Config::USB_CONFIRM_COUNT) usbLowCount++;
-        if (usbLowCount >= Config::USB_CONFIRM_COUNT) _usbState = false;
-    }
-}
-static bool usbConnected() { return _usbState; }
-
-static float         prevVoltage  = -1.0f;
-static int           prevPct      = -1;
-static bool          prevUsbState = false;
-static float         lastBatV     = 0.0f;
-static bool          haveBatV     = false;
+static float prevVoltage = -1.0f;
+static int prevPct = -1;
 static unsigned long lastSampleMs = 0;
 
 #define SMOOTH_N 8
-static float   voltBuf[SMOOTH_N] = {0};
-static uint8_t voltIdx   = 0;
-static bool    voltFilled = false;
+static float voltBuf[SMOOTH_N] = {0};
+static uint8_t voltIdx = 0;
+static bool voltFilled = false;
 
 static float sampleVoltage() {
     float rawMv = analogReadMilliVolts(Config::BAT_ADC_PIN) * 2.0f;
-    updateUsbState(rawMv);
 
     voltBuf[voltIdx] = rawMv;
     voltIdx = (voltIdx + 1) % SMOOTH_N;
@@ -41,10 +20,7 @@ static float sampleVoltage() {
     int n = voltFilled ? SMOOTH_N : (voltIdx ? voltIdx : 1);
     float sum = 0;
     for (int i = 0; i < n; i++) sum += voltBuf[i];
-    float v = sum / n / 1000.0f;
-
-    if (!usbConnected()) { lastBatV = v; haveBatV = true; }
-    return v;
+    return sum / n / 1000.0f;
 }
 
 static int voltsToPercent(float v) {
@@ -61,18 +37,6 @@ static uint16_t pctColor(int pct) {
 }
 
 
-static void drawUsbBanner(bool usb) {
-    Display::tft.fillRect(0, BatteryScreen::STATUS_Y, Display::SCREEN_W, BatteryScreen::STATUS_H, Display::Colors::BG);
-    if (usb) {
-        Display::tft.drawRect(4, BatteryScreen::STATUS_Y, Display::SCREEN_W - 8, BatteryScreen::STATUS_H - 2, Display::Colors::AMBER);
-        Display::tft.setTextColor(Display::Colors::AMBER, Display::Colors::BG);
-        Display::tft.drawCentreString("USB - LAST KNOWN VALUE", 120, BatteryScreen::STATUS_Y + 3, 1);
-    } else {
-        Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-        Display::tft.drawCentreString("BATTERY ONLY", 120, BatteryScreen::STATUS_Y + 3, 1);
-    }
-}
-
 
 static void drawBatteryShell() {
     Display::tft.drawRoundRect(BatteryScreen::BAR_X, BatteryScreen::BAR_Y, BatteryScreen::BAR_W, BatteryScreen::BAR_H, BatteryScreen::BAR_CORNER, Display::Colors::GREEN_DIM);
@@ -86,7 +50,7 @@ static void drawFillBar(int pct, uint16_t col) {
     int innerY = BatteryScreen::BAR_Y + PAD;
     int innerW = BatteryScreen::BAR_W - PAD * 2;
     int innerH = BatteryScreen::BAR_H - PAD * 2;
-    int fillW  = (int)(innerW * pct / 100.0f);
+    int fillW = (int)(innerW * pct / 100.0f);
 
     Display::tft.fillRect(innerX, innerY, innerW, innerH, Display::Colors::BG);
     if (fillW > 0)
@@ -144,14 +108,10 @@ static void drawPercent(int pct, uint16_t col) {
 void drawBatteryBase() {
     Display::tft.fillScreen(Display::Colors::BG);
 
-    prevVoltage  = -1.0f;
-    prevPct      = -1;
-    voltFilled   = false;
-    voltIdx      = 0;
-    usbHighCount = 0;
-    usbLowCount  = 0;
-    _usbState    = false;
-    prevUsbState = true;
+    prevVoltage = -1.0f;
+    prevPct = -1;
+    voltFilled = false;
+    voltIdx = 0;
 
     Display::drawHeader("BATTERY");
 
@@ -166,19 +126,17 @@ void drawBatteryBase() {
 
     // Initial draw
     lastSampleMs = millis();
-    float    v   = sampleVoltage();
-    int      pct = voltsToPercent(v);
+    float v = sampleVoltage();
+    int pct = voltsToPercent(v);
     uint16_t col = pctColor(pct);
 
-    prevUsbState = usbConnected();
-    drawUsbBanner(prevUsbState);
     drawFillBar(pct, col);
     drawVoltage(v, col);
     drawMah(pct);
     drawPercent(pct, col);
 
     prevVoltage = v;
-    prevPct     = pct;
+    prevPct = pct;
 }
 
 
@@ -187,18 +145,9 @@ void tickBattery() {
     if (now - lastSampleMs < 500) return;
     lastSampleMs = now;
 
-    bool usb = usbConnected();
+    float v = sampleVoltage();
 
-    if (usb != prevUsbState) {
-        prevUsbState = usb;
-        drawUsbBanner(usb);
-        prevVoltage = -1.0f;
-        prevPct     = -1;
-    }
-
-    float v = (usb && haveBatV) ? lastBatV : sampleVoltage();
-
-    int      pct = voltsToPercent(v);
+    int pct = voltsToPercent(v);
     uint16_t col = pctColor(pct);
 
     if (pct != prevPct) {

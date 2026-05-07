@@ -2,11 +2,9 @@
 #define BATTERY_SCREEN_H
 
 #include <cstdint>
-#include "display.h"
+#include "base/display.h"
 
 namespace BatteryScreen {
-    constexpr uint8_t STATUS_Y = Display::HEADER_H + 4;
-    constexpr uint8_t STATUS_H = 16;
     constexpr uint8_t LABEL_CHG_Y = 58;
     constexpr uint8_t BAR_X = 10;
     constexpr uint8_t BAR_Y = 72;

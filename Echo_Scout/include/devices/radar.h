@@ -1,7 +1,7 @@
 #ifndef RADAR_H
 #define RADAR_H
 
-#include "config.h"
+#include "base/config.h"
 
 struct RawTarget {
   int16_t x, y, speed;

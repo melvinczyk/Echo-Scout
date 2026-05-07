@@ -1,10 +1,10 @@
-#include "settings.h"
-#include "grid.h"
-#include "config.h"
+#include "base/settings.h"
+#include "base/grid.h"
+#include "base/config.h"
 #include <Arduino.h>
 #include <Preferences.h>
 
-static const char* NVS_NS  = "echo";
+static const char* NVS_NS = "echo";
 static const char* NVS_CFG = "cfg";
 static const char* NVS_VER = "ver";
 static constexpr uint8_t CFG_VERSION = 2;
@@ -32,11 +32,11 @@ const uint8_t moveThreshVals[] = {0, 10, 30, 50, 100, 150, 200};
 const char *moveThreshLabels[] = {"OFF", "10mm","30mm", "50mm",
                                   "100mm", "150mm", "200mm"};
 
-const uint8_t blVals[]     = {25, 51, 102, 178, 255};
-const char* blLabels[]     = {"10%", "20%", "40%", "70%", "100%"};
+const uint8_t blVals[] = {25, 51, 102, 178, 255};
+const char* blLabels[] = {"10%", "20%", "40%", "70%", "100%"};
 
-const uint32_t sleepTimeoutVals[]   = {0, 30000, 60000, 120000, 300000, 600000};
-const char*    sleepTimeoutLabels[] = {"OFF", "30s", "1min", "2min", "5min", "10min"};
+const uint32_t sleepTimeoutVals[] = {0, 30000, 60000, 120000, 300000, 600000};
+const char* sleepTimeoutLabels[] = {"OFF", "30s", "1min", "2min", "5min", "10min"};
 
 const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true, 4, 2};
 Settings cfg = DEFAULT_SETTINGS;
