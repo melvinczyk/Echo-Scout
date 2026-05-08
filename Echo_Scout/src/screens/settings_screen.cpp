@@ -19,9 +19,9 @@ static const char *slLabel(uint8_t i) { return sleepTimeoutLabels[i]; }
 static const char *duLabel(uint8_t i) { return distUnitLabels[i]; }
 static const char *suLabel(uint8_t i) { return speedUnitLabels[i]; }
 static const char *mpLabel(uint8_t i)  { return ColorScheme::PALETTES[i].name; }
-static const char *vxLabel(uint8_t i)  { return map3dVoxelLabels[i]; }
-static const char *cpLabel(uint8_t i)  { return map3dCaptureLabels[i]; }
 static const char *mrLabel2(uint8_t i) { return map3dMaxRangeLabels[i]; }
+static const char *blnLabel(uint8_t i) { return i ? "ON" : "OFF"; }
+static const char *celLabel(uint8_t i) { return map3dCellLabels[i]; }
 
 
 SRow settingRows[SettingsScreen::NUM_SETTING_ROWS] = {
@@ -44,9 +44,9 @@ SRow settingRows[SettingsScreen::NUM_SETTING_ROWS] = {
     {"POWER", "", nullptr, 0, secLabel, true},
     {"SLEEP", "idle sleep timeout", &cfg.sleepTimeoutIdx, NUM_SLEEP, slLabel, false},
     {"3D MAP", "", nullptr, 0, secLabel, true},
-    {"VOXEL SIZE", "dedup bucket (OFF=ring)", &cfg.map3dVoxelIdx, NUM_MAP3D_VOXEL, vxLabel, false},
-    {"CAPTURE", "bilinear density", &cfg.map3dCaptureIdx, NUM_MAP3D_CAPTURE, cpLabel, false},
     {"MAX RANGE", "discard beyond", &cfg.map3dMaxRangeIdx, NUM_MAP3D_MAXRANGE, mrLabel2, false},
+    {"BILINEAR", "2x2 avg upsample", (uint8_t*)&cfg.map3dBilinear, 2, blnLabel, false},
+    {"DOT SPACING", "px between dots", &cfg.map3dCellIdx, NUM_MAP3D_CELL, celLabel, false},
 };
 
 

@@ -40,7 +40,8 @@ namespace Display {
         POWER_CONFIRM,
         SPIRIT,
         TOF,
-        MAP3D
+        MAP3D,
+        SURVEYOR
     };
 
     struct Button {

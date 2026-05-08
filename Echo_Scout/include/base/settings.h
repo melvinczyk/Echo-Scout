@@ -18,9 +18,9 @@ struct Settings {
   uint8_t speedUnitIdx;
   uint8_t mapPaletteIdx;
   // ── 3D Map ────────────────────────────────────────────────
-  uint8_t map3dVoxelIdx;    // spatial dedup bucket size
-  uint8_t map3dCaptureIdx;  // bilinear upsample factor
   uint8_t map3dMaxRangeIdx; // max capture distance
+  bool    map3dBilinear;    // 2×2 average upsampling (default on)
+  uint8_t map3dCellIdx;     // dot spacing in pixels
 };
 
 extern const uint8_t hitsVals[];
@@ -52,13 +52,11 @@ constexpr uint8_t NUM_SPEED_UNIT = 4;
 constexpr uint8_t NUM_MAP_PALETTE = 4;
 constexpr float SMOOTH_ALPHA = 0.4f;
 
-constexpr uint8_t NUM_MAP3D_VOXEL    = 5;  // OFF/25/50/100/200 mm
-constexpr uint8_t NUM_MAP3D_CAPTURE  = 3;  // 1×/2×/4×
 constexpr uint8_t NUM_MAP3D_MAXRANGE = 3;  // 1m/2m/4m
+constexpr uint8_t NUM_MAP3D_CELL     = 4;  // 2/3/4/6 px spacing
 
-extern const char* map3dVoxelLabels[];
-extern const char* map3dCaptureLabels[];
 extern const char* map3dMaxRangeLabels[];
+extern const char* map3dCellLabels[];
 
 extern const uint8_t blVals[];
 extern const char* blLabels[];
@@ -70,9 +68,9 @@ extern const Settings DEFAULT_SETTINGS;
 extern Settings cfg;
 
 inline uint8_t  cfgHits()           { return hitsVals[cfg.hitsIdx]; }
-inline uint16_t cfgMap3dVoxelMm()   { static const uint16_t v[]={0,25,50,100,200}; return v[cfg.map3dVoxelIdx]; }
-inline int      cfgMap3dCaptureUP() { static const int      v[]={1,2,4};           return v[cfg.map3dCaptureIdx]; }
-inline uint16_t cfgMap3dMaxRange()  { static const uint16_t v[]={1000,2000,4000};  return v[cfg.map3dMaxRangeIdx]; }
+inline uint16_t cfgMap3dMaxRange()  { static const uint16_t v[]={1000,2000,4000}; return v[cfg.map3dMaxRangeIdx]; }
+inline bool     cfgMap3dBilinear()  { return cfg.map3dBilinear; }
+inline uint8_t  cfgMap3dCell()      { static const uint8_t  v[]={2,3,4,6};        return v[cfg.map3dCellIdx]; }
 inline uint8_t cfgDrops()  { return dropsVals[cfg.dropsIdx]; }
 inline uint16_t cfgMinRange() { return minRangeVals[cfg.minRangeIdx]; }
 inline float cfgMaxAngle() { return (float)maxAngleVals[cfg.maxAngleIdx]; }

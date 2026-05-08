@@ -3,6 +3,8 @@
 
 static constexpr float ZONE_STEP = 5.625f * 3.14159265f / 180.0f;
 
+// Coordinate system matches 3D map: X=right, Y=down, Z=forward (boresight).
+// Tilt is measured from boresight (+Z). Flat wall straight ahead = 0°.
 static float zoneDir[64][3];
 static float pts[8][8][3];
 static bool  valid[8][8];
@@ -15,10 +17,11 @@ static void vcross(float ax, float ay, float az, float bx, float by, float bz,
     rx = ay*bz - az*by; ry = az*bx - ax*bz; rz = ax*by - ay*bx;
 }
 
+// Oblique projection: X=right, Y=down, Z=forward (shifts up-right on screen).
 static void proj(float x, float y, float z, int& sx, int& sy) {
     float s = NormalTab::SCALE / 500.0f;
-    sx = NormalTab::VIZ_CX + (int)((x + y * 0.4f) * s);
-    sy = NormalTab::VIZ_CY - (int)((z + y * 0.2f) * s);
+    sx = NormalTab::VIZ_CX + (int)((x + z * 0.35f) * s);
+    sy = NormalTab::VIZ_CY + (int)((y - z * 0.18f) * s);
 }
 
 static bool fitSurface() {
@@ -34,8 +37,9 @@ static bool fitSurface() {
     for (int r = 1; r < 7; r++) for (int c = 1; c < 7; c++) {
         if (!valid[r][c] || !valid[r][c-1] || !valid[r][c+1] ||
             !valid[r-1][c] || !valid[r+1][c]) continue;
-        float dux = pts[r][c+1][0]-pts[r][c-1][0], duy = pts[r][c+1][1]-pts[r][c-1][1], duz = pts[r][c+1][2]-pts[r][c-1][2];
-        float dvx = pts[r+1][c][0]-pts[r-1][c][0], dvy = pts[r+1][c][1]-pts[r-1][c][1], dvz = pts[r+1][c][2]-pts[r-1][c][2];
+        // du = rightward, dv = downward (row increases downward)
+        float dux=pts[r][c+1][0]-pts[r][c-1][0], duy=pts[r][c+1][1]-pts[r][c-1][1], duz=pts[r][c+1][2]-pts[r][c-1][2];
+        float dvx=pts[r+1][c][0]-pts[r-1][c][0], dvy=pts[r+1][c][1]-pts[r-1][c][1], dvz=pts[r+1][c][2]-pts[r-1][c][2];
         float lnx, lny, lnz;
         vcross(dux, duy, duz, dvx, dvy, dvz, lnx, lny, lnz);
         float l = sqrtf(lnx*lnx + lny*lny + lnz*lnz);
@@ -46,7 +50,8 @@ static bool fitSurface() {
     normX = nnx/nc; normY = nny/nc; normZ = nnz/nc;
     float l = sqrtf(normX*normX + normY*normY + normZ*normZ);
     if (l > 1e-6f) { normX /= l; normY /= l; normZ /= l; }
-    if (normY < 0)  { normX = -normX; normY = -normY; normZ = -normZ; }
+    // Flip so normal points toward sensor (normZ < 0, since boresight is +Z).
+    if (normZ > 0) { normX = -normX; normY = -normY; normZ = -normZ; }
     return true;
 }
 
@@ -67,8 +72,10 @@ static void draw() {
         Display::spr.setTextColor(Display::Colors::GREEN_FAINT, Display::Colors::BG);
         Display::spr.drawCentreString("NO SURFACE", 120, 18, 2);
     } else {
-        float tilt = acosf(normY < -1.0f ? -1.0f : normY > 1.0f ? 1.0f : normY) * 180.0f / 3.14159265f;
-        float az   = atan2f(normX, normZ) * 180.0f / 3.14159265f;
+        // tilt = angle from boresight (+Z). Flat wall ahead = 0°.
+        float tilt = acosf(constrain(-normZ, -1.0f, 1.0f)) * 180.0f / 3.14159265f;
+        // az = horizontal direction the surface normal tilts toward (0° = straight, ±90° = left/right).
+        float az   = atan2f(normX, -normZ) * 180.0f / 3.14159265f;
         char buf[32];
         sprintf(buf, "TILT  %.1f deg", tilt);
         Display::spr.setTextColor(Display::Colors::GREEN, Display::Colors::BG);
@@ -93,7 +100,7 @@ static void draw() {
     }
 
     float ux, uy, uz, vx, vy, vz;
-    vcross(normX, normY, normZ, 0, 0, 1, ux, uy, uz);
+    vcross(normX, normY, normZ, 1, 0, 0, ux, uy, uz);
     if (sqrtf(ux*ux+uy*uy+uz*uz) < 0.01f) vcross(normX, normY, normZ, 0, 1, 0, ux, uy, uz);
     float ul = sqrtf(ux*ux+uy*uy+uz*uz); ux/=ul; uy/=ul; uz/=ul;
     vcross(normX, normY, normZ, ux, uy, uz, vx, vy, vz);
@@ -121,12 +128,14 @@ namespace NormalTab {
 void drawTab() {
     Display::tft.fillRect(0, TofTabs::CONTENT_Y, Display::SCREEN_W,
                           TofTabs::TAB_Y - TofTabs::CONTENT_Y, Display::Colors::BG);
+    // Zone directions matching 3D map: X=right, Y=down, Z=forward.
     for (int z = 0; z < 64; z++) {
         int r = z/8, c = z%8;
-        float ah = (c - 3.5f) * ZONE_STEP, av = -(r - 3.5f) * ZONE_STEP;
+        float ah = (c - 3.5f) * ZONE_STEP;
+        float av = (r - 3.5f) * ZONE_STEP;
         zoneDir[z][0] = sinf(ah);
-        zoneDir[z][1] = -cosf(ah) * cosf(av);
-        zoneDir[z][2] = sinf(av);
+        zoneDir[z][1] = sinf(av);
+        zoneDir[z][2] = cosf(ah) * cosf(av);
     }
     haveSurface = false;
     draw();

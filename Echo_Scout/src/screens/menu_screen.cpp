@@ -123,7 +123,17 @@ static void drawMapButton() {
     Display::tft.drawRect(bx,   by,   bw,   bh,   Display::Colors::GREEN_FAINT);
     Display::tft.drawRect(bx+2, by+2, bw-4, bh-4, Display::Colors::GREEN_DIM);
     Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
-    Display::tft.drawCentreString("[ 3D MAP ]", 120, by + bh/2 - 8, 2);
+    Display::tft.drawCentreString("3D MAP", bx + bw/2, by + bh/2 - 8, 1);
+}
+
+static void drawSurveyorButton() {
+    constexpr int bx = MenuScreen::SURV_X, by = MenuScreen::SURV_Y,
+                  bw = MenuScreen::SURV_W, bh = MenuScreen::SURV_H;
+    Display::tft.fillRect(bx, by, bw, bh, Display::Colors::BG);
+    Display::tft.drawRect(bx,   by,   bw,   bh,   Display::Colors::GREEN_FAINT);
+    Display::tft.drawRect(bx+2, by+2, bw-4, bh-4, Display::Colors::GREEN_DIM);
+    Display::tft.setTextColor(Display::Colors::GREEN_DIM, Display::Colors::BG);
+    Display::tft.drawCentreString("SURVEYOR", bx + bw/2, by + bh/2 - 8, 1);
 }
 
 
@@ -164,6 +174,7 @@ void startMenu() {
 
     drawLaunchButton(true);
     drawMapButton();
+    drawSurveyorButton();
     for (const Display::Button& b : toolButtons)  Display::drawButton(b);
     for (const Display::Button& b : utilButtons)  Display::drawButton(b);
     drawPowerButton();

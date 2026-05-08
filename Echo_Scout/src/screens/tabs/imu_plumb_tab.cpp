@@ -44,9 +44,13 @@ namespace PlumbTab {
 
     void tick() {
         if (!imuUpdate()) return;
-        float roll, pitch, yaw; ImuTabs::toEuler(roll, pitch, yaw);
-        float ox = sinf(roll * PI/180.0f) * PLUMB_LEN;
-        if (ox*ox > (float)(PLUMB_LEN*PLUMB_LEN)) ox = copysignf(PLUMB_LEN-1, ox);
+        // Gravity component along the device's horizontal (X) axis.
+        // This is the standard roll measurement: how much the device tilts
+        // left/right. Bob swings left when device leans left, right when right.
+        // Using the direct quaternion formula avoids Euler angle gimbal coupling.
+        float sinRoll = 2.0f * (ImuState::qR * ImuState::qI + ImuState::qJ * ImuState::qK);
+        sinRoll = constrain(sinRoll, -1.0f, 1.0f);
+        float ox = sinRoll * PLUMB_LEN;
         if (fabsf(ox - prevPbOx) < 1.0f) return;
 
         if (prevPbOx > -9998) {

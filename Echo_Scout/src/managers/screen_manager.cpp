@@ -14,6 +14,7 @@
 #include "screens/calibrate_screen.h"
 #include "screens/tof_screen.h"
 #include "screens/map3d_screen.h"
+#include "screens/surveyor_screen.h"
 #include <esp_sleep.h>
 
 
@@ -25,6 +26,9 @@ static void menuOnTouch(int tx, int ty) {
     } else if (inRect(tx, ty, MenuScreen::MAP_X, MenuScreen::MAP_Y,
                                MenuScreen::MAP_W, MenuScreen::MAP_H)) {
         ScreenManager::switchScreen(Display::Screen::MAP3D);
+    } else if (inRect(tx, ty, MenuScreen::SURV_X, MenuScreen::SURV_Y,
+                               MenuScreen::SURV_W, MenuScreen::SURV_H)) {
+        ScreenManager::switchScreen(Display::Screen::SURVEYOR);
     } else if (inRect(tx, ty, MenuScreen::SCANNER_X, MenuScreen::SCANNER_Y,
                                MenuScreen::SCANNER_W, MenuScreen::SCANNER_H)) {
         ScreenManager::switchScreen(Display::Screen::TOF);
@@ -76,6 +80,7 @@ static const ScreenEntry screenTable[] = {
     { drawSpiritBase,     tickSpirit,  spiritOnTouch      },
     { drawTofBase,        tickTof,     handleTofTouch     },
     { drawMap3dBase,      tickMap3d,   handleMap3dTouch   },
+    { drawSurveyorBase,   tickSurveyor, handleSurveyorTouch },
 };
 
 }
@@ -99,12 +104,16 @@ void ScreenManager::tick() {
 
 void ScreenManager::handleTouch() {
     static bool wasTouched = false;
+    static int startX = 0;
     static int startY = 0;
+    static int lastTx = 0, lastTy = 0;
     static int startScroll = 0;
     static bool dragMoved = false;
 
     int tx, ty;
     bool touched = touchRead(tx, ty);
+    if (touched) { lastTx = tx; lastTy = ty; }
+    else         { tx = lastTx; ty = lastTy; }
     if (touched) ImuState::lastMotionMs = millis();
     bool pressed = touched && !wasTouched;
     bool held = touched && wasTouched;
@@ -130,6 +139,25 @@ void ScreenManager::handleTouch() {
             }
         } else if (released && !dragMoved) {
             handleSettingsTouch(tx, ty);
+        }
+    } else if (AppState::currentScreen == Display::Screen::SURVEYOR) {
+        if (pressed) {
+            // Back button always works
+            if (inRect(tx, ty, 3, 3, 64, Display::HEADER_H - 6)) {
+                switchScreen(Display::Screen::MENU);
+            } else {
+                handleSurveyorDragBegin(tx, ty);
+                startX = tx; startY = ty;
+                dragMoved = false;
+            }
+        } else if (held) {
+            int dx = abs(tx - startX), dy = abs(ty - startY);
+            if (dx > 10 || dy > 10) dragMoved = true;
+            if (dragMoved) handleSurveyorDrag(tx, ty);
+        } else if (released) {
+            // Only suppress tap if the drag was in the viz area
+            if (!dragMoved || !SurveyorScreen::dragWasInViz())
+                handleSurveyorTouch(tx, ty);
         }
     } else if (pressed) {
         if (AppState::currentScreen != Display::Screen::MENU &&
