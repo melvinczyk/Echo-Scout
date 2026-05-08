@@ -17,6 +17,10 @@ struct Settings {
   uint8_t distUnitIdx;
   uint8_t speedUnitIdx;
   uint8_t mapPaletteIdx;
+  // ── 3D Map ────────────────────────────────────────────────
+  uint8_t map3dVoxelIdx;    // spatial dedup bucket size
+  uint8_t map3dCaptureIdx;  // bilinear upsample factor
+  uint8_t map3dMaxRangeIdx; // max capture distance
 };
 
 extern const uint8_t hitsVals[];
@@ -48,6 +52,14 @@ constexpr uint8_t NUM_SPEED_UNIT = 4;
 constexpr uint8_t NUM_MAP_PALETTE = 4;
 constexpr float SMOOTH_ALPHA = 0.4f;
 
+constexpr uint8_t NUM_MAP3D_VOXEL    = 5;  // OFF/25/50/100/200 mm
+constexpr uint8_t NUM_MAP3D_CAPTURE  = 3;  // 1×/2×/4×
+constexpr uint8_t NUM_MAP3D_MAXRANGE = 3;  // 1m/2m/4m
+
+extern const char* map3dVoxelLabels[];
+extern const char* map3dCaptureLabels[];
+extern const char* map3dMaxRangeLabels[];
+
 extern const uint8_t blVals[];
 extern const char* blLabels[];
 extern const uint32_t sleepTimeoutVals[];
@@ -57,8 +69,11 @@ extern const char* speedUnitLabels[];
 extern const Settings DEFAULT_SETTINGS;
 extern Settings cfg;
 
-inline uint8_t cfgHits() { return hitsVals[cfg.hitsIdx]; }
-inline uint8_t cfgDrops() { return dropsVals[cfg.dropsIdx]; }
+inline uint8_t  cfgHits()           { return hitsVals[cfg.hitsIdx]; }
+inline uint16_t cfgMap3dVoxelMm()   { static const uint16_t v[]={0,25,50,100,200}; return v[cfg.map3dVoxelIdx]; }
+inline int      cfgMap3dCaptureUP() { static const int      v[]={1,2,4};           return v[cfg.map3dCaptureIdx]; }
+inline uint16_t cfgMap3dMaxRange()  { static const uint16_t v[]={1000,2000,4000};  return v[cfg.map3dMaxRangeIdx]; }
+inline uint8_t cfgDrops()  { return dropsVals[cfg.dropsIdx]; }
 inline uint16_t cfgMinRange() { return minRangeVals[cfg.minRangeIdx]; }
 inline float cfgMaxAngle() { return (float)maxAngleVals[cfg.maxAngleIdx]; }
 inline float cfgAccRange() { return (float)accRangeVals[cfg.accRangeIdx]; }

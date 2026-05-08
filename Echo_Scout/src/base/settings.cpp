@@ -8,7 +8,7 @@
 static const char* NVS_NS = "echo";
 static const char* NVS_CFG = "cfg";
 static const char* NVS_VER = "ver";
-static constexpr uint8_t CFG_VERSION = 4;
+static constexpr uint8_t CFG_VERSION = 5;
 
 
 const uint8_t hitsVals[] = {1, 2, 3, 4, 5};
@@ -42,7 +42,12 @@ const char* sleepTimeoutLabels[] = {"OFF", "30s", "1min", "2min", "5min", "10min
 const char* distUnitLabels[]  = {"METRIC", "IMPERIAL"};
 const char* speedUnitLabels[] = {"cm/s", "m/s", "km/h", "mph"};
 
-const Settings DEFAULT_SETTINGS = {2, 1, 3, 3, 3, 0, 0, true, 4, 2, 0, 0, 0};
+const char* map3dVoxelLabels[]    = {"OFF", "25mm", "50mm", "100mm", "200mm"};
+const char* map3dCaptureLabels[]  = {"1×", "2×", "4×"};
+const char* map3dMaxRangeLabels[] = {"1m", "2m", "4m"};
+
+//                                   hits drops minR maxA accR sgat mvth  smth  bl  slp  du  su  pal  vox cap  rng
+const Settings DEFAULT_SETTINGS = {  2,   1,    3,   3,   3,   0,   0,   true, 4,  2,   0,  0,  0,   2,  1,   2  };
 Settings cfg = DEFAULT_SETTINGS;
 
 void initBacklight() {

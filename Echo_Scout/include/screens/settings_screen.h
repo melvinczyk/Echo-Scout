@@ -10,7 +10,7 @@ namespace SettingsScreen {
   constexpr int SET_START_Y = 4;
   constexpr int SET_RESET_H = 44;
 
-  constexpr int NUM_SETTING_ROWS = 18;
+  constexpr int NUM_SETTING_ROWS = 22;
 
   static constexpr int ARROW_W = 52;
   static constexpr int ARROW_CX = ARROW_W / 2;
